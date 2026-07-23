@@ -257,14 +257,18 @@ export class Player {
       const dx = op.x - me.x, dz = op.z - me.z, d = Math.hypot(dx, dz);
       if (d < reach && d > 1e-3) {
         const nx = dx / d, nz = dz / d;
-        const pw = this.dashAir ? this.game.ABIL.dashStrikeAir : this.game.ABIL.dashStrikeGround;
-        const lift = this.dashAir ? this.game.ABIL.dashStrikeAirLift : this.game.ABIL.dashStrikeGroundLift;
+        const A = this.game.ABIL;
+        const sliding = this.sliding > 0;
+        // slide = a low tackle that TRIPS (knockdown), air-dash = flying kick,
+        // ground-dash = a plain shove.
+        const pw = sliding ? A.slideStrike : this.dashAir ? A.dashStrikeAir : A.dashStrikeGround;
+        const lift = sliding ? A.slideLift : this.dashAir ? A.dashStrikeAirLift : A.dashStrikeGroundLift;
         const om = o.mass();
         o.hit(nx * pw * om, lift * om, nz * pw * om,
-          this.dashAir ? { tumble: 1, axis: new THREE.Vector3(nz, 0.3, -nx) } : {});
+          (this.dashAir || sliding) ? { tumble: 1, axis: new THREE.Vector3(nz, 0.3, -nx) } : {});
         this.dashTimer *= 0.4;
         this.game.fx.dust(op, this.hex, 10, 0.9);
-        this.game.fx.shake(this.dashAir ? 0.6 : 0.3);
+        this.game.fx.shake(this.dashAir ? 0.6 : sliding ? 0.5 : 0.3);
         if (o.grabbedBy) this.game.actions.releaseGrab(o.grabbedBy);
       }
     }
