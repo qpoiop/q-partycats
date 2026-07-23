@@ -79,7 +79,7 @@ export const MOVE = {
   turnRateGround: 9,   // facing lerp rate — smooth, not whip-snappy
   turnRateAir: 5,
   knockWindow: 0.42,   // no-steer after a hit (not so long they fly across the map)
-  airDrag: 0.9,
+  airDrag: 2.0,        // knocked cats bleed horizontal speed → arc down, don't sail across the arena
   shove: 15,           // direct contact-shove — makes pressing feel like a push (decisive shoves come from dash)
 };
 
@@ -97,10 +97,10 @@ export const ABIL = {
   dashAirLift: 2.4,
   dashInvuln: 0.4,
   dashTime: 0.4,       // active window (contact = strike)
-  dashStrikeGround: 5.5,
+  dashStrikeGround: 4.0,
   dashStrikeGroundLift: 2.2,
-  dashStrikeAir: 8.5,      // flying-kick punch — hits hard
-  dashStrikeAirLift: 4.0,
+  dashStrikeAir: 5.5,      // flying-kick — strong but not a full-arena launch
+  dashStrikeAirLift: 3.6,
 
   // punch (주먹치기) — quick jab, the bread-and-butter attack
   punchCd: 0.5,
