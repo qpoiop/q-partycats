@@ -311,6 +311,13 @@
   }
 
   @media (orientation:landscape) and (max-height:560px){
+    /* short landscape (phones): compact status cards so all 4 stay on one row
+       instead of wrapping onto a second row and eating the short height */
+    #hud .top{ gap:5px; flex-wrap:nowrap; max-width:99vw; }
+    .pcard{ padding:3px 7px 3px 3px; border-radius:10px; gap:5px; }
+    .pcard .av{ width:16px; height:16px; }
+    .pcard .nm{ font-size:11px; }
+    .pcard .sc{ min-width:17px; height:17px; font-size:11px; padding:0 4px; }
     #home{ padding:8px 20px; justify-content:center; overflow:auto; }
     #home .logo{ font-size:clamp(48px,13vh,96px); }
     #home .logo .brandImg{ width:min(360px,44vw); max-height:52vh; }   /* size by width, not tiny vh */
