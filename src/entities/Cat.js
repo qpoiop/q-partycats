@@ -155,19 +155,17 @@ export class Cat {
     // rear up on hind legs (grab / struggle) — front paws lift like hands
     if (rear > 0.02) for (const leg of fl) this._rot(leg, -1.25 * rear + Math.sin(t * 12) * 0.25 * rear, 0, 0);
 
-    // PUNCH (주먹치기) — big lead-paw hook that snaps forward and back
+    // PUNCH (주먹치기) — lead paw swings forward in the sagittal plane (no head
+    // wobble, no wild twist — a clean straight jab)
     if (punch > 0.02 && fl.length) {
       const sw = Math.sin(Math.min(1, punch) * Math.PI);   // 0→1→0 over the swing
-      this._rot(fl[0], -2.2 * sw, 0.7 * sw, -0.5 * sw);    // lead paw drives across
-      if (fl[1]) this._rot(fl[1], -0.9 * sw, 0, 0.3 * sw); // off paw cocks back
-      if (this.head) this._rot(this.head, -0.3 * sw, 0.25 * sw, 0);
+      this._rot(fl[0], -1.35 * sw, 0, 0);
     }
 
-    // FLYING KICK (날라차기) — both front paws punch forward, hind legs thrust back
+    // FLYING KICK (날라차기) — front paws thrust forward, hind legs kick back
     if (kick > 0.02 && fl.length) {
-      for (const leg of fl) this._rot(leg, -1.9 * kick, 0, 0);
-      for (const leg of bl) this._rot(leg, 1.0 * kick, 0, 0);
-      if (this.head) this._rot(this.head, -0.4 * kick, 0, 0);
+      for (const leg of fl) this._rot(leg, -1.5 * kick, 0, 0);
+      for (const leg of bl) this._rot(leg, 0.8 * kick, 0, 0);
     }
 
     // SLIDE (슬라이딩) — low tackle, front paws reach forward flat
@@ -175,10 +173,13 @@ export class Cat {
       for (const leg of fl) this._rot(leg, -1.0 * slide, 0, 0);
     }
 
-    // VICTORY CHEER — front paws wave up alternately (jump handled by Player)
+    // VICTORY CHEER — both paws thrown up high (만세) and opened/closed together
     if (cheer > 0.02 && fl.length) {
-      for (let i = 0; i < fl.length; i++) this._rot(fl[i], (-1.35 + Math.sin(t * 9 + i * Math.PI) * 0.5) * cheer, 0, 0);
-      if (this.head) this._rot(this.head, Math.sin(t * 9) * 0.35 * cheer, 0, 0);
+      const wv = Math.sin(t * 7);
+      for (let i = 0; i < fl.length; i++) {
+        const side = i === 0 ? 1 : -1;
+        this._rot(fl[i], (-1.7 + wv * 0.35) * cheer, 0, side * (0.35 + wv * 0.35) * cheer);
+      }
     }
 
     // procedural limb flail (knocked / teetering / struggling)

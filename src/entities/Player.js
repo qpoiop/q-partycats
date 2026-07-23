@@ -148,7 +148,11 @@ export class Player {
 
     const downed = this.knockdown > 0;
     const steerable = !downed && this.knockTimer <= 0 && this.dashTimer <= 0;
-    if (steerable) this._steer(dt);
+    if (steerable) {
+      this._steer(dt);
+      // press into another cat → physically shove them (Party-Animals grind)
+      if (this.moveMag > 0.3 && this.onGround && !this.grabbedBy) this._grindShove(dt);
+    }
     else if (downed && this.onGround) {
       // lying on the ground → grind to a stop (no steering fighting contacts)
       const v = this.vel(), sp = Math.hypot(v.x, v.z);
@@ -302,7 +306,7 @@ export class Player {
       this.group.rotation.y = now * 1.1;                 // slow turn to show off
       const hop = Math.abs(Math.sin(now * 3.4));
       this.cat.model.position.y = hop * 0.75;            // clear jumps
-      this.tilt.rotation.set(0, 0, 0);
+      this.tilt.rotation.set(-1.1, 0, 0);               // stand upright on hind legs (만세)
       this.tilt.scale.set(1 + (1 - hop) * 0.14, 1 - (1 - hop) * 0.14, 1 + (1 - hop) * 0.14);
       this.cat.updateAnimation(dt, { speed: 0, onGround: true, cheer: 1 });
       this.shadow.visible = true;

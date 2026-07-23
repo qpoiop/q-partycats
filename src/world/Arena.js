@@ -171,6 +171,18 @@ export class Arena {
       this.group.add(t);
     }
 
+    // gentle grass mounds → the ground reads with relief, not a flat disc
+    // (visual only; the physics platform stays flat so gameplay is unaffected)
+    const moundMat = new THREE.MeshStandardMaterial({ color: 0x84c04a, roughness: 1, flatShading: true });
+    for (let i = 0; i < 7; i++) {
+      const a = Math.random() * 6.28, r = inner + Math.random() * (outer - inner);
+      const rad = 1.6 + Math.random() * 2.4;
+      const m = new THREE.Mesh(new THREE.IcosahedronGeometry(rad, 1), moundMat);
+      m.position.set(Math.cos(a) * r, -rad + 0.28 + Math.random() * 0.22, Math.sin(a) * r);
+      m.scale.y = 0.32; m.receiveShadow = true; m.castShadow = true;
+      this.group.add(m);
+    }
+
     // bushes in the annulus
     const bushMat = new THREE.MeshStandardMaterial({ color: 0x5aa84a, roughness: 1 });
     for (let i = 0; i < 12; i++) {

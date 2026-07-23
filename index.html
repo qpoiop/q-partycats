@@ -255,8 +255,8 @@
   @keyframes cerLineIn{ from{ opacity:0; transform:translateY(10px);} to{ opacity:1; transform:none;} }
 
   /* results */
-  #results{ display:flex; align-items:center; justify-content:center; background:radial-gradient(120% 90% at 50% 120%, transparent, rgba(8,6,16,.55)); }
-  #results .panel{ width:min(640px,92vw); text-align:center; border-radius:30px; padding:30px 24px 26px; position:relative; overflow:hidden; }
+  #results{ display:flex; align-items:center; justify-content:center; overflow-y:auto; padding:12px 0; background:radial-gradient(120% 90% at 50% 120%, transparent, rgba(8,6,16,.55)); }
+  #results .panel{ width:min(640px,92vw); max-height:96vh; overflow-y:auto; text-align:center; border-radius:30px; padding:30px 24px 26px; position:relative; }
   #results .crown{ font-family:'Paytone One'; font-size:clamp(30px,7vw,52px); }
   #results .champ{ font-family:'Paytone One'; font-size:clamp(40px,10vw,74px); margin-top:2px; line-height:1; }
   #results .rank{ margin:22px 0; display:flex; flex-direction:column; gap:10px; }
@@ -265,6 +265,16 @@
   .rrow .dot{ width:16px; height:16px; border-radius:50%; box-shadow:0 0 10px currentColor; }
   .rrow .sc{ margin-left:auto; font-family:'Paytone One'; font-size:24px; color:#ffd98a;}
   #results .go{ display:flex; gap:12px; justify-content:center; }
+  /* short landscape (phones held sideways): shrink so nothing clips */
+  @media (max-height:540px){
+    #results .panel{ padding:14px 18px 16px; border-radius:22px; }
+    #results .crown{ font-size:clamp(16px,4.5vh,28px); }
+    #results .champ{ font-size:clamp(24px,9vh,52px); }
+    #results .rank{ margin:10px 0; gap:6px; }
+    .rrow{ padding:6px 12px; font-size:15px; }
+    .rrow .rk{ width:26px; height:26px; font-size:14px; }
+    .rrow .sc{ font-size:18px; }
+  }
 
   /* loader */
   #loader{ position:absolute; inset:0; background:radial-gradient(135% 125% at 50% 8%, #35285c 0%, #1d1740 46%, #0b0818 100%); display:flex; align-items:center; justify-content:center; flex-direction:column; gap:28px; z-index:50; transition:opacity .6s; overflow:hidden; }

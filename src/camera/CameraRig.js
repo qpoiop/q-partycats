@@ -61,12 +61,16 @@ export class CameraRig {
     } else if (falling) {
       const hp = h.pos(); fx = hp.x; fz = hp.z; fy = hp.y + 2.5;   // lock onto the plunge
     } else if (watching) {
-      // centroid of the living cats, clamped near centre
-      let n = 0, sx = 0, sz = 0;
-      for (const p of game.players) { if (p.alive) { const q = p.pos(); sx += q.x; sz += q.z; n++; } }
-      if (n) { fx = sx / n; fz = sz / n; }
-      const fl = Math.hypot(fx, fz);
-      if (fl > CAMERA.followClamp) { fx = fx / fl * CAMERA.followClamp; fz = fz / fl * CAMERA.followClamp; }
+      // follow the LOCAL player (my-centric, like Party Animals) — biased a
+      // little toward the pack so opponents stay in view, clamped off the rim.
+      let cx = 0, cz = 0, n = 0;
+      for (const p of game.players) { if (p.alive) { const q = p.pos(); cx += q.x; cz += q.z; n++; } }
+      if (n) { cx /= n; cz /= n; }
+      const me = (h && h.alive) ? h.pos() : { x: cx, z: cz };
+      fx = me.x * 0.72 + cx * 0.28;
+      fz = me.z * 0.72 + cz * 0.28;
+      const fl = Math.hypot(fx, fz), cap = ARENA.radius * 0.7;
+      if (fl > cap) { fx = fx / fl * cap; fz = fz / fl * cap; }
     }
     const lerp = Math.min(1, dt * CAMERA.followLerp);
     this.target.x += (fx - this.target.x) * lerp;
