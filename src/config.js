@@ -186,6 +186,7 @@ export const GRAB = {
   struggleDecay: 0.5,       // struggle bleeds off when not mashing
   struggleGainMash: 0.14,   // per mash input (key/tap/stick flick)
   struggleGainDash: 0.55,   // dash while carried = big burst (near-instant break)
+  mashPulse: 0.4,           // per-mash flail spike (visual "손맛", decays fast)
 
   breakKick: 7.5,       // knockback the victim kicks the grabber with on break
   breakStun: 0.6,       // grabber can't re-grab for this long after a break

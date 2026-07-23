@@ -64,6 +64,7 @@ export class Player {
     this._leanX = 0; this._leanZ = 0;   // persistent body-lean (transients add on top, no compounding)
     this._wasGround = true; this._prevVy = 0;   // landing-squash detection
     this._koPose = 0; this._koSign = 1;   // knockdown flop ramp (smooth fall-over / get-up)
+    this._mashPulse = 0;                  // struggle-mash flail spike (decays)
     this.knockdown = 0;   // >0 = downed: can't act, must get up
     this.teeter = 0; this._teetered = false;   // hanging/flailing at the ledge
     this.falling = false; this._splashed = false; this.celebrating = false;
@@ -150,6 +151,7 @@ export class Player {
     if (this.invuln > 0) this.invuln -= dt;
     if (this.grabCd > 0) this.grabCd -= dt;
     if (this.knockdown > 0) this.knockdown -= dt;
+    if (this._mashPulse > 0) this._mashPulse = Math.max(0, this._mashPulse - dt * 4.5);
     // grabber: grip drains over time, faster while the victim struggles
     if (this.grabbing) {
       this.grip -= (GRAB.gripDrainBase + GRAB.gripDrainStruggle * this.grabbing.struggle) * dt;
@@ -207,13 +209,20 @@ export class Player {
     if (al > GRAB.maxForce) { const k = GRAB.maxForce / al; ax *= k; ay *= k; az *= k; }
     this.body.applyImpulse(V(ax * m * dt, ay * m * dt, az * m * dt), true);
     this.struggle = Math.max(0, this.struggle - GRAB.struggleDecay * dt);
+    if (this._mashPulse > 0) this._mashPulse = Math.max(0, this._mashPulse - dt * 4.5);   // mash spike decays (carried path skips preStep timers)
     this.faceTarget = g.facing + Math.PI;
     this.onGround = false;
     if (this.struggle >= GRAB.struggleMax) this.game.actions.breakFree(g);
   }
 
-  /** Victim mashing to escape (from Input while carried, or Bot). */
-  addStruggle(amount) { if (this.grabbedBy) this.struggle = Math.min(GRAB.struggleMax, this.struggle + amount); }
+  /** Victim mashing to escape (from Input while carried, or Bot). Each mash also
+      punches a flail spike (tactile "손맛") and, for the local player, a tiny shake. */
+  addStruggle(amount) {
+    if (!this.grabbedBy) return;
+    this.struggle = Math.min(GRAB.struggleMax, this.struggle + amount);
+    this._mashPulse = Math.min(1, this._mashPulse + GRAB.mashPulse);
+    if (this === this.game.players[0]) this.game.fx.shake(0.05);
+  }
 
   /* Force-based steering: a velocity spring, resolved by the physics solver.
      Because it's a force (not a velocity snap), momentum carries, contacts
@@ -417,7 +426,7 @@ export class Player {
 
     const sp = Math.hypot(v.x, v.z);
     const rear = (this.grabbedBy || this.grabbing) ? 1 : 0;   // stand on hind legs to grab/struggle
-    const flail = this.grabbedBy ? (0.4 + this.struggle * 0.6) : this.teeter > 0 ? 1 : this.knockdown > 0 ? 0.85 : this.tumble > 0 ? this.tumble : 0;
+    const flail = this.grabbedBy ? Math.min(1.4, 0.4 + this.struggle * 0.6 + this._mashPulse * 0.6) : this.teeter > 0 ? 1 : this.knockdown > 0 ? 0.85 : this.tumble > 0 ? this.tumble : 0;
     this.cat.updateAnimation(dt, {
       speed: sp, onGround: this.onGround, grabbed: !!this.grabbedBy, flail, rear,
       punch: this.punching > 0 ? Math.min(1, this.punching / ABIL.punchTime) : 0,
