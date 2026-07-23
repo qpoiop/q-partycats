@@ -179,9 +179,12 @@ export const GRAB = {
 export const ANIM = {
   // ground speed (m/s) at which the Walking clip plays at its natural 1x.
   // timeScale = clamp(groundSpeed / refSpeed, min, max) so feet track velocity.
-  refSpeed: 3.2,
-  timeScaleMin: 0.6,
-  timeScaleMax: 2.1,
+  // Measured: the planted paw travels ~2.9 u/s at timeScale 1, so refSpeed=2.9
+  // makes stance foot-speed == body-speed → near-zero slide (was 3.2 → dragged
+  // ~0.5 m/s at top speed). Max raised so top speed (6.2) can reach its ~2.14x.
+  refSpeed: 2.9,
+  timeScaleMin: 0.5,
+  timeScaleMax: 2.4,
   idleSpeed: 0.35,     // below this → idle (sit) blends in
   walkBlendSpeed: 1.4, // full walk weight reached here
 };
