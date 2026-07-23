@@ -37,7 +37,7 @@
 ### 리그/모션 품질 (rig quality)
 - [ ] 걷기/달리기 다리 모션 눈으로 튜닝.
 - [ ] 잡힌 쪽 버둥 + 잡은 쪽 홀드 자세 자연스럽게.
-- [ ] 모델 교체/추가 대비 인터페이스 재점검 (Cat.js 상태객체 + 뼈 매핑 fallback).
+- [x] 모델 교체/추가 인터페이스 — 뼈 매핑을 **config.BONEMAP 선언형**(모델별 regex)으로. 기존 spatial fallback이 이 리그에서 쓰레기 뽑던 것 확인 → _end 뼈 제외로 하드닝(이제 다리4개 정확). proto.modelId 부착. 새 모델=BONEMAP 항목 추가만.
 
 ### 맵/UI (map / ui)
 - [ ] 맵 시각적 흥미 더 (둔덕 추가됨 — 장식/지형 계속).
@@ -56,3 +56,4 @@
 - [x] 사이클3: 넉백 거리 밸런싱 — 날라차기 30u→10u, 대시 8u→4.8u (dashStrikeAir/Ground↓, airDrag↑). 실측 검증.
 - [x] 사이클4: 발 미끄러짐 제거 — 앞발 지면속도 실측해 ANIM.refSpeed 2.9로 동기화. slip 0.54→0.05.
 - [x] 사이클5: 봇 AI 공격성↑ + 안전가드 날라차기 콤보. self-play 자멸 0 검증.
+- [x] 사이클6: 뼈 매핑 선언형(config.BONEMAP)화 + fallback 하드닝(_end 제외). 확장성/공통화 실현.

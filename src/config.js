@@ -23,6 +23,16 @@ export const ASSETS = {
   water: 'scene/water_animation.glb',
 };
 
+/* ---------- character bone maps (per model) ----------
+   Procedural motion (rear-up, punch, kick, flail…) drives the rig by role, not
+   by one model's exact bone names. To add/swap a character, add its id here with
+   regexes that tag its front legs / back legs / head — nothing else changes.
+   `default` is the best-effort fallback when a model has no entry. */
+export const BONEMAP = {
+  cat:     { frontLeg: /F[LR]/, backLeg: /B[LR]/, head: /^head/i },
+  default: { frontLeg: /(front|fore).*(leg|paw|arm|hand)|F[LR]\b/i, backLeg: /(back|hind|rear).*(leg|paw)|B[LR]\b/i, head: /head|skull|neck/i },
+};
+
 /* ---------- arena ----------
    One radius R drives everything: spawns, decoration, and camera framing
    are all expressed as ratios of R so nothing is hand-tuned in isolation. */

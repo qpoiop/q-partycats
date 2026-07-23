@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
-import { BODY, ANIM } from '../config.js';
+import { BODY, ANIM, BONEMAP } from '../config.js';
 
 /* ============================================================
    Cat — one character's visual: a team-tinted clone of the cat
@@ -12,8 +12,9 @@ import { BODY, ANIM } from '../config.js';
    of the prototype's disconnected fixed timeScale.
    ============================================================ */
 export class Cat {
-  constructor(proto, hex) {
+  constructor(proto, hex, boneSpec) {
     this.fallback = proto.fallback;
+    this.boneSpec = boneSpec || BONEMAP[proto.modelId] || BONEMAP.cat;
     const inner = SkeletonUtils.clone(proto.scene);
     this._tint(inner, hex);
 
@@ -37,35 +38,38 @@ export class Cat {
 
   }
 
-  /* Bone mapping — decoupled from any one model.
-     Primary: this rig's known names (fast, exact). Fallback: spatial
-     heuristic (lowest bones = legs, split front/back by local Z, top = head)
-     so a different/added rig still gets procedural motion for free. */
+  /* Bone mapping — decoupled from any one model. Roles are tagged by the
+     model's BONEMAP regexes (config), so adding/swapping a character is a
+     config change, not a code change. A spatial heuristic is the last-resort
+     fallback when the regexes tag nothing (best-effort; skips leaf `_end` bones
+     which cluster and mislead). Procedural motion tolerates a partial map. */
   _mapBones(inner) {
     this.legs = []; this.frontLegs = []; this.backLegs = []; this.head = null;
+    const spec = this.boneSpec;
     const bones = [];
     inner.traverse(o => { if (o.isBone) bones.push(o); });
 
-    // 1) known-name mapping (this cat)
+    // 1) role tagging by the model's declared name patterns
     for (const o of bones) {
-      if (o.name.indexOf('fingers') === 0) {
-        this.legs.push(o);
-        if (/F[LR]/.test(o.name)) this.frontLegs.push(o); else this.backLegs.push(o);
-      } else if (o.name === 'head1_019') this.head = o;
+      if (spec.frontLeg.test(o.name)) { this.legs.push(o); this.frontLegs.push(o); }
+      else if (spec.backLeg.test(o.name)) { this.legs.push(o); this.backLegs.push(o); }
+      else if (!this.head && spec.head.test(o.name)) this.head = o;
     }
     if (this.frontLegs.length && this.backLegs.length && this.head) return;
 
-    // 2) spatial fallback for an unknown rig
-    if (!bones.length) return;
-    const v = new THREE.Vector3(), pos = bones.map(b => { b.getWorldPosition(v); return { b, y: v.y, z: v.z }; });
-    const ys = pos.map(p => p.y).sort((a, c) => a - c);
-    const legCut = ys[Math.min(ys.length - 1, 3)];          // 4 lowest bones ≈ legs
+    // 2) spatial best-effort fallback (unknown rig): the lowest non-leaf bones
+    // are legs, split front/back by local Z; the highest non-leaf bone is head.
+    const trunk = bones.filter(b => !/_end(_|$)/i.test(b.name));
+    if (!trunk.length) return;
+    const v = new THREE.Vector3(), pos = trunk.map(b => { b.getWorldPosition(v); return { b, y: v.y, z: v.z }; });
+    const ys = pos.map(p => p.y).slice().sort((a, c) => a - c);
+    const legCut = ys[Math.min(ys.length - 1, 3)];
     if (!this.legs.length) {
       const legBones = pos.filter(p => p.y <= legCut + 1e-3);
       const zMid = legBones.reduce((s, p) => s + p.z, 0) / (legBones.length || 1);
       for (const p of legBones) { this.legs.push(p.b); (p.z >= zMid ? this.frontLegs : this.backLegs).push(p.b); }
     }
-    if (!this.head) this.head = pos.reduce((a, c) => (c.y > a.y ? c : a)).b;   // highest bone
+    if (!this.head) this.head = pos.reduce((a, c) => (c.y > a.y ? c : a)).b;
   }
 
   _tint(inner, hex) {

@@ -28,10 +28,10 @@ export class AssetManager {
   async loadModel(key, fallbackFactory) {
     try {
       const gltf = await this.loadGLB(ASSETS[key]);
-      this.cache[key] = { scene: gltf.scene, animations: gltf.animations, fallback: false };
+      this.cache[key] = { scene: gltf.scene, animations: gltf.animations, fallback: false, modelId: key };
     } catch (e) {
       console.warn(`[assets] '${key}' unavailable (${ASSETS[key]}) — using fallback.`, e?.message || e);
-      this.cache[key] = { scene: fallbackFactory(), animations: [], fallback: true };
+      this.cache[key] = { scene: fallbackFactory(), animations: [], fallback: true, modelId: key };
     }
     return this.cache[key];
   }
