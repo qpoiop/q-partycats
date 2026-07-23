@@ -63,6 +63,7 @@ export class Player {
     this.tumble = 0; this.tumbleAxis = new THREE.Vector3(1, 0, 0); this._axisH = new THREE.Vector3(1, 0, 0); this.squash = 0;
     this._leanX = 0; this._leanZ = 0;   // persistent body-lean (transients add on top, no compounding)
     this._wasGround = true; this._prevVy = 0;   // landing-squash detection
+    this._koPose = 0; this._koSign = 1;   // knockdown flop ramp (smooth fall-over / get-up)
     this.knockdown = 0;   // >0 = downed: can't act, must get up
     this.teeter = 0; this._teetered = false;   // hanging/flailing at the ledge
     this.falling = false; this._splashed = false; this.celebrating = false;
@@ -85,6 +86,7 @@ export class Player {
     if (impact >= KNOCKDOWN.threshold) {
       // solid hit → knocked down (tumbles, can't act, gets up after a delay)
       this.knockdown = Math.min(KNOCKDOWN.maxTime, KNOCKDOWN.minTime + (impact - KNOCKDOWN.threshold) * KNOCKDOWN.perSpeed);
+      this._koSign = ix >= 0 ? 1 : -1;   // flop in the direction of the blow
       this.tumble = 1;
       if (axis) this.tumbleAxis.copy(axis).normalize();
       else this.tumbleAxis.set(iz, 0.2, -ix).normalize();
@@ -324,6 +326,10 @@ export class Player {
     }
 
     this.squash += (0 - this.squash) * Math.min(1, dt * 8);
+    this.cat.model.position.y = 0;   // default; branches (knockdown/fallback) may lift
+    // knockdown ramp → flops over and gets up smoothly instead of snapping flat
+    const koTarget = this.knockdown > 0 ? 1 : 0;
+    this._koPose += (koTarget - this._koPose) * Math.min(1, dt * (koTarget ? 11 : 6));
     let sx = 1, sy = 1;
     if (this.teeter > 0) {
       // hanging on the lip → flail
@@ -343,15 +349,13 @@ export class Player {
       this.tilt.rotation.z += (0 - this.tilt.rotation.z) * Math.min(1, dt * 6);
       this.tilt.rotation.y += (0 - this.tilt.rotation.y) * Math.min(1, dt * 6);
       sy = 1 - this.squash; sx = 1 + this.squash * 0.5;
-    } else if (this.knockdown > 0) {
-      // downed → lie flat on the ground. Roll around a HORIZONTAL axis (feet
-      // pivot) so the body lays out on the surface instead of screwing its head
-      // through the floor; capped under 90° so nothing dips below ground.
-      this._axisH.set(this.tumbleAxis.x, 0, this.tumbleAxis.z);
-      if (this._axisH.lengthSq() < 1e-4) this._axisH.set(1, 0, 0);
-      this._axisH.normalize();
-      this.tilt.rotation.set(0, 0, 0);
-      this.tilt.rotateOnAxis(this._axisH, Math.PI * 0.46);
+    } else if (this._koPose > 0.02) {
+      // downed → FLOP onto the side (roll about the forward axis) and lift the
+      // model by half its width so it lies flat ON the grass — no head-in-floor.
+      // Ramped by _koPose so it topples over and rises smoothly, not a snap.
+      const e = this._koPose;
+      this.tilt.rotation.set(0, 0, (Math.PI * 0.5) * this._koSign * e);
+      this.cat.model.position.y = 0.7 * e;
       this.tumble = 1;
     } else if (this.tumble > 0) {
       // a stagger/tip in the knock direction that rights itself — horizontal
