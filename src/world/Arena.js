@@ -117,9 +117,22 @@ export class Arena {
 
   _buildPlatform() {
     const R = ARENA.radius;
-    const top = new THREE.Mesh(
-      new THREE.CylinderGeometry(R, R, 1.4, 80),
-      new THREE.MeshStandardMaterial({ color: 0x8ec850, roughness: 0.95 }));
+    // grass with low-frequency tonal patches → the ground reads with depth
+    // instead of a flat uniform slab (world-position noise, no extra meshes).
+    const grass = new THREE.MeshStandardMaterial({ color: 0x8ec850, roughness: 0.95 });
+    grass.onBeforeCompile = (sh) => {
+      sh.vertexShader = 'varying vec3 vWPos;\n' + sh.vertexShader.replace(
+        '#include <begin_vertex>',
+        '#include <begin_vertex>\n vWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+      sh.fragmentShader = 'varying vec3 vWPos;\n' + sh.fragmentShader.replace(
+        '#include <color_fragment>',
+        `#include <color_fragment>
+         float _n = sin(vWPos.x * 0.55) * sin(vWPos.z * 0.5)
+                  + 0.5 * sin(vWPos.x * 0.17 + 1.7) * cos(vWPos.z * 0.2);
+         diffuseColor.rgb *= 1.0 + 0.11 * _n;
+         diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.40, 0.60, 0.20), 0.12 * max(0.0, _n));`);
+    };
+    const top = new THREE.Mesh(new THREE.CylinderGeometry(R, R, 1.4, 80), grass);
     top.position.y = -0.7; top.receiveShadow = true; this.group.add(top);
 
     // chunky earthy underside (reads as a floating chunk of land)
