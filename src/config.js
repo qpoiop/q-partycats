@@ -56,7 +56,7 @@ export const PHYSICS = {
   gravity: -18,          // stronger than proto (-14) → snappier jumps/landings
   timestep: 1 / 60,
   maxSubsteps: 5,
-  platformFriction: 0.85,
+  platformFriction: 0.6,
   platformRestitution: 0.04,
   bodyFriction: 0.85,     // cats grip when pressed together → a grinding shove, not a slide
   bodyRestitution: 0.0,   // cats don't bounce off each other → no contact jitter
@@ -78,6 +78,7 @@ export const MOVE = {
   turnRateAir: 5,
   knockWindow: 0.34,   // s of no-steer after taking a hit (keeps knockback juicy)
   airDrag: 0.9,        // slight horizontal drag while knocked (was 1.7 → felt floaty/hangy)
+  shove: 15,           // direct contact-shove — makes pressing feel like a push (decisive shoves come from dash)
 };
 
 // ---------- abilities (expressed as target velocities, intuitive) ----------

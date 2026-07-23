@@ -182,7 +182,7 @@
      background:rgba(10,8,20,.42); backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,.1);
      padding:5px 14px; border-radius:99px; text-shadow:0 2px 6px rgba(0,0,0,.4); }
 
-  #stickZone{ position:absolute; left:0; bottom:0; width:46%; height:60%; pointer-events:auto; touch-action:none; -webkit-user-select:none; user-select:none; }
+  #stickZone{ position:absolute; left:0; bottom:0; width:58%; height:72%; pointer-events:auto; touch-action:none; -webkit-user-select:none; user-select:none; }
   #stick{ position:absolute; width:132px; height:132px; border-radius:50%; display:none;
      background:radial-gradient(circle at 50% 35%,rgba(255,255,255,.16),rgba(255,255,255,.05)); border:2px solid rgba(255,255,255,.35); box-shadow:0 8px 30px rgba(0,0,0,.4);}
   #stick .knob{ position:absolute; left:50%; top:50%; width:62px; height:62px; margin:-31px; border-radius:50%;
@@ -297,8 +297,8 @@
 
   @media (orientation:landscape) and (max-height:560px){
     #home{ padding:8px 20px; justify-content:center; overflow:auto; }
-    #home .logo{ font-size:clamp(40px,10vh,84px); }
-    #home .logo .brandImg{ width:auto; max-height:22vh; }
+    #home .logo{ font-size:clamp(48px,13vh,96px); }
+    #home .logo .brandImg{ width:min(360px,44vw); max-height:52vh; }   /* size by width, not tiny vh */
     #home .brand{ margin-top:0; }
     #home .kicker{ display:none; }
     #home .kicker{ font-size:12px; letter-spacing:5px; }

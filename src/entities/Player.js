@@ -164,6 +164,9 @@ export class Player {
       if (Math.random() < 0.5) this.game.fx.dust(this.pos(), this.hex, 2, 0.4);
       this._dashStrike();
     }
+    // grind: pressing into another cat shoves *them* — scaled by your commitment,
+    // so a full push (mag 1) overpowers a half-hearted bot (직접 임펄스 → 마찰 무시)
+    if (steerable && this.moveMag > 0.5 && this.onGround) this._grindShove(dt);
   }
 
   /** Victim carried by a grabber: pulled to the hold point by a
@@ -213,6 +216,23 @@ export class Player {
         const dec = Math.min(sp, MOVE.frictionDecel * dt);
         const k = (sp - dec) / sp;
         this.body.setLinvel(V(v.x * k, v.y, v.z * k), true);
+      }
+    }
+  }
+
+  _grindShove(dt) {
+    const me = this.pos(), dx0 = this.moveDir.x, dz0 = this.moveDir.y;
+    const reach = BODY.capRadius * 2 + 0.35;
+    for (const o of this.game.players) {
+      if (o === this || !o.alive || o.grabbedBy || o.invuln > 0) continue;
+      const op = o.pos();
+      const dx = op.x - me.x, dz = op.z - me.z, d = Math.hypot(dx, dz);
+      if (d < reach && d > 1e-3) {
+        const dot = (dx * dx0 + dz * dz0) / d;   // am I pushing toward them?
+        if (dot > 0.5) {
+          const push = MOVE.shove * this.moveMag * dot * o.mass() * dt;
+          o.body.applyImpulse(V((dx / d) * push, 0, (dz / d) * push), true);
+        }
       }
     }
   }
