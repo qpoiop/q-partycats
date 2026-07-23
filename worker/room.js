@@ -90,8 +90,11 @@ export class Room {
       case 'setColor': if (this._colorFree(msg.color, entry)) { entry.color = msg.color; this._broadcastPresence(); } break;
       case 'setName': entry.name = String(msg.name || '').slice(0, 12) || entry.name; this._broadcastPresence(); break;
       case 'config': if (entry.id === this.hostId) { this.config = { count: msg.count | 0 || this.config.count, rounds: msg.rounds | 0 || this.config.rounds }; this._broadcastPresence(); } break;
-      case 'start': if (entry.id === this.hostId && this.phase === 'lobby') { this.phase = 'playing'; this._broadcast({ t: 'start', config: this.config, seed: (Math.random() * 1e9) | 0 }); } break;
-      case 'input': /* layer 2: forward to the authoritative sim */ this._broadcast({ t: 'input', from: entry.slot, input: msg.input }, entry.id); break;
+      case 'start': if (entry.id === this.hostId && this.phase === 'lobby') { this.phase = 'playing'; this._broadcast({ t: 'start', config: this.config, roster: this._roster(), hostSlot: this._slotOf(this.hostId) }); } break;
+      case 'lobby': if (entry.id === this.hostId) { this.phase = 'lobby'; this._broadcast({ t: 'toLobby' }); } break;
+      // host-authoritative relay: inputs go to the host, snapshots go to everyone else
+      case 'input': { const h = this._hostWs(); if (h) this._send(h, { t: 'input', slot: entry.slot, input: msg.input }); break; }
+      case 'snap': if (entry.id === this.hostId) this._broadcast({ t: 'snap', s: msg.s }, entry.id); break;
       default: break;
     }
   }
@@ -133,6 +136,9 @@ export class Room {
   }
 
   // ---- helpers ----
+  _hostWs() { for (const e of this.slots.values()) if (e.id === this.hostId) return e.ws; return null; }
+  _slotOf(id) { for (const [i, e] of this.slots) if (e.id === id) return i; return -1; }
+  _roster() { return [...this.slots.entries()].sort((a, b) => a[0] - b[0]).map(([slot, e]) => ({ slot, color: e.color, name: e.name, connected: !!e.ws })); }
   _freeSlot() { for (let i = 0; i < MAX_PLAYERS; i++) if (!this.slots.has(i)) return i; return null; }
   _anyId() { for (const e of this.slots.values()) return e.id; return null; }
   _colorFree(c, self) { for (const e of this.slots.values()) if (e !== self && e.color === c) return false; return true; }

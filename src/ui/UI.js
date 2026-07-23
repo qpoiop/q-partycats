@@ -63,6 +63,7 @@ export class UI {
 
   renderLobby() {
     const g = this.game;
+    if (g.online && g.roomPresence) return this._renderLobbyOnline();
     const slots = $('#slots'); slots.innerHTML = '';
     const order = this._teamOrder();
     for (let i = 0; i < g.config.count; i++) {
@@ -82,6 +83,32 @@ export class UI {
   }
 
   _teamOrder() { const h = this.game.humanColor; return [h, ...[0, 1, 2, 3].filter(c => c !== h)]; }
+
+  _renderLobbyOnline() {
+    const g = this.game, pres = g.roomPresence, me = g.net.self;
+    const bySlot = {}; pres.players.forEach(p => { bySlot[p.slot] = p; });
+    const slots = $('#slots'); slots.innerHTML = '';
+    for (let i = 0; i < pres.config.count; i++) {
+      const p = bySlot[i], isYou = me && p && p.slot === me.slot;
+      const t = TEAMS[p ? p.color : i];
+      const el = document.createElement('div');
+      el.className = 'slot filled' + (isYou ? ' you' : '');
+      el.innerHTML = `<div class="badge">P${i + 1}</div><div class="glow" style="background:${t.css}"></div>
+        <img class="portrait" src="${g.thumbs[p ? p.color : i] || ''}" alt="">
+        <div class="who">${p ? (isYou ? '나' : p.name) : '빈자리'}</div>
+        <div class="tag">${p ? (p.host ? '방장' : (p.connected ? '플레이어' : '연결 끊김…')) : '봇 자동참가'}</div>`;
+      slots.appendChild(el);
+    }
+    const myColor = me && bySlot[me.slot] ? bySlot[me.slot].color : 0;
+    const cw = $('#colorPick');
+    cw.innerHTML = TEAMS.map((tt, ci) => `<button class="sw ${ci === myColor ? 'on' : ''}" data-c="${ci}" style="background:${tt.css};color:${tt.css}"></button>`).join('');
+    cw.querySelectorAll('.sw').forEach(s => s.addEventListener('click', () => g.net.setColor(+s.dataset.c)));
+    const host = me && me.host;
+    const cp = $('#countPills'); cp.innerHTML = '';
+    MATCH.countOptions.forEach(n => { const b = document.createElement('button'); b.className = 'pill' + (pres.config.count === n ? ' on' : ''); b.textContent = n + '인'; if (host) b.onclick = () => g.net.setConfig(n, pres.config.rounds); cp.appendChild(b); });
+    const rp = $('#roundPills'); rp.innerHTML = '';
+    MATCH.roundOptions.forEach(n => { const b = document.createElement('button'); b.className = 'pill' + (pres.config.rounds === n ? ' on' : ''); b.textContent = n; if (host) b.onclick = () => g.net.setConfig(pres.config.count, n); rp.appendChild(b); });
+  }
 
   renderPills() {
     const g = this.game;
@@ -191,12 +218,13 @@ export class UI {
   // ---------- buttons ----------
   _wireButtons() {
     const g = this.game;
-    $('#goPlay').onclick = () => g.enterLobby();
+    // 게임 시작 = 방 만들기(호스트, 빈자리는 봇) → 친구는 코드로 입장. 오프라인은 코드 없이 로컬.
+    $('#goPlay').onclick = () => { g.online = false; g.enterLobby(); };
     $('#joinBtn').onclick = () => {
       let v = ($('#joinInput').value || '').trim().toUpperCase();
-      if (!v) { $('#joinInput').focus(); return; }
-      if (!/^CAT-/.test(v)) v = 'CAT-' + v.replace(/[^0-9A-Z]/g, '').slice(0, 3);
-      g.enterLobby(v); this.showBanner('방 ' + v + ' 입장!', '#ffd98a', 1.6);
+      if (v && !/^CAT-/.test(v)) v = 'CAT-' + v.replace(/[^0-9A-Z]/g, '').slice(0, 3);
+      g.connectRoom(v || null);
+      this.showBanner(v ? ('방 ' + v + ' 입장!') : '방 생성!', '#ffd98a', 1.6);
     };
     $('#joinInput').addEventListener('keydown', e => { if (e.key === 'Enter') $('#joinBtn').click(); });
     $('#copyCode').onclick = () => {
@@ -205,8 +233,11 @@ export class UI {
       const b = $('#copyCode'); b.textContent = '복사됨!'; setTimeout(() => b.textContent = '복사', 1200);
     };
     $('#goHow').onclick = () => this.showBanner('밀치고 던져서 떨어뜨려라!', '#fff', 2.4);
-    $('#backHome').onclick = () => { g.state = 'home'; this.showScreen('home'); };
-    $('#startGame').onclick = () => this.wipe(() => { g.match.buildPlayers(); g.match.startMatch(); });
+    $('#backHome').onclick = () => { if (g.online) { g.net.close(); g.online = false; g.mp.end(); } g.state = 'home'; this.showScreen('home'); };
+    $('#startGame').onclick = () => {
+      if (g.online) { if (g.net.self && g.net.self.host) g.net.start(); else this.showBanner('방장이 시작할 때까지 대기…', '#ffd98a', 1.6); }
+      else this.wipe(() => { g.match.buildPlayers(); g.match.startMatch(); });
+    };
     $('#resHome').onclick = () => this.wipe(() => { g.match.disposePlayers(); g.state = 'home'; this.showScreen('home'); });
     $('#resAgain').onclick = () => this.wipe(() => { g.players.forEach(p => p.body.setEnabled(true)); g.match.startMatch(); });
   }

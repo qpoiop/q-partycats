@@ -31,6 +31,31 @@ export class Match {
     }
   }
 
+  /** Online roster: players[0] = the local cat, others by slot (remote reals
+      controlled by their input on the host / by snapshot on clients; empty
+      slots filled with bots the host runs). */
+  buildOnlinePlayers(roster, localSlot, isHost) {
+    this.disposePlayers();
+    const g = this.game;
+    const bySlot = {}; (roster || []).forEach(r => { bySlot[r.slot] = r; });
+    const myColor = bySlot[localSlot] ? bySlot[localSlot].color : g.humanColor;
+    g.players.push(new Player(g, { idx: 0, teamIdx: myColor, isBot: false, name: '나', slot: localSlot, control: 'local' }));
+    let idx = 1;
+    for (let slot = 0; slot < g.config.count; slot++) {
+      if (slot === localSlot) continue;
+      const r = bySlot[slot];
+      const real = r && r.connected;
+      g.players.push(new Player(g, {
+        idx, slot,
+        teamIdx: real ? r.color : slot,
+        isBot: !real,
+        name: real ? r.name : BOT_NAMES[(idx * 2) % BOT_NAMES.length],
+        control: real ? (isHost ? 'remote' : 'net') : (isHost ? 'bot' : 'net'),
+      }));
+      idx++;
+    }
+  }
+
   disposePlayers() {
     this.game.players.forEach(p => p.dispose());
     this.game.players.length = 0;

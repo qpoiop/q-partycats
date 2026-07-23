@@ -15,9 +15,11 @@ const V = (x, y, z) => ({ x, y, z });
    pauses steering so knockbacks stay punchy and physical.
    ============================================================ */
 export class Player {
-  constructor(game, { idx, teamIdx, isBot, name, spawn }) {
+  constructor(game, { idx, teamIdx, isBot, name, spawn, slot, control }) {
     this.game = game;
     this.idx = idx;
+    this.slot = slot ?? idx;          // network identity (stable across clients)
+    this.control = control || (isBot ? 'bot' : 'local'); // local | remote | bot | net
     this.team = teamIdx;
     this.name = name;
     this.isBot = isBot;

@@ -13,6 +13,8 @@ import { Input } from '../input/Input.js';
 import { UI } from '../ui/UI.js';
 import { renderPortraits } from '../ui/Portraits.js';
 import { initLoaderFx } from '../loader/LoaderFx.js';
+import { Net } from '../net/Net.js';
+import { Multiplayer } from '../net/Multiplayer.js';
 
 /* ============================================================
    Game — top-level orchestrator. Owns shared state and wires the
@@ -33,6 +35,10 @@ export class Game {
     this.state = 'boot';
     this.safeRadius = ARENA.radius;   // sudden-death storm zone (shrinks late round)
     this.champion = null;             // set during the victory ceremony
+    this.net = new Net();             // multiplayer networking
+    this.mp = new Multiplayer(this);  // host-authoritative sync
+    this.online = false;
+    this.roomPresence = null;
 
     // render core (sync, no assets needed)
     this.canvas = document.getElementById('c');
@@ -70,16 +76,48 @@ export class Game {
     // attract demo: fill the home screen with idle cats
     this.match.buildPlayers();
     this.match.placeAll();
-    this.players.forEach(p => { p.isBot = true; });
+    this.players.forEach(p => { p.isBot = true; p.control = 'bot'; });
 
     this.ui.setLoad(1, '준비 완료');
     this.state = 'home';
     this.ui.showScreen('home');
 
     this.input = new Input(this);
+    this._wireNet();
     this.loop = new GameLoop(dt => this.tick(dt));
     this.loop.start();
     setTimeout(() => this.ui.hideLoader(stopLoaderFx), 300);
+  }
+
+  // ---------------- multiplayer lifecycle ----------------
+  _wireNet() {
+    this.net.on('presence', m => { this.roomPresence = m; if (this.state === 'lobby') this.ui.renderLobby(); });
+    this.net.on('welcome', m => { this.ui.setRoomCode(m.code); });
+    this.net.on('start', m => this._onNetStart(m));
+    this.net.on('status', s => { if (s === 'closed' || s === 'full') { /* fall back to offline */ } });
+  }
+
+  /** Create a room (host) or join one (code) and enter the online lobby. */
+  connectRoom(code) {
+    const c = code || ('CAT-' + (100 + Math.floor(Math.random() * 899)));
+    this.online = true;
+    this.net.connect(c, { name: '나', color: this.humanColor });
+    this.enterLobby(c);
+  }
+
+  _onNetStart(msg) {
+    if (!this.net.self) return;
+    this.config.count = msg.config.count | 0 || this.config.count;
+    this.config.rounds = msg.config.rounds | 0 || this.config.rounds;
+    const isHost = this.net.self.host, localSlot = this.net.self.slot;
+    this.ui.wipe(() => {
+      this.match.buildOnlinePlayers(msg.roster, localSlot, isHost);
+      this.mp.begin(this.net, { isHost, localSlot });
+      this.ui.buildHUD();
+      this.ui.showScreen('playing');
+      if (isHost) this.match.startMatch();
+      else this.state = 'playing';
+    });
   }
 
   _ceremonyFx(dt) {
@@ -101,8 +139,11 @@ export class Game {
   }
 
   tick(dt) {
-    // human movement intent → local player (not while carried — inputs struggle instead)
-    if (this.state === 'playing') {
+    const online = this.mp.on;
+    const client = online && !this.mp.isHost;
+
+    // local movement intent → players[0] (offline + online host; client sends it instead)
+    if (this.state === 'playing' && !client) {
       const p = this.players[0];
       if (p && p.alive && !p.grabbedBy) {
         const mv = this.input.humanMove();
@@ -116,17 +157,25 @@ export class Game {
       const menu = this.state === 'home' || this.state === 'lobby' || this.state === 'results';
       const ceremony = this.state === 'ceremony';
       if (combat || menu || ceremony) {
-        if (menu || (this.state === 'playing' && this.match.roundActive)) {
-          for (const p of this.players) if (p.isBot) this.bot.update(p, dt);
+        if (client) {
+          this.mp.applySnapshot(dt);               // clients: render the host's world
+        } else {
+          if (online) this.mp.applyLocalAndRemote(); // host: local + remote inputs
+          if (menu || (this.state === 'playing' && this.match.roundActive)) {
+            for (const p of this.players) if (p.control === 'bot') this.bot.update(p, dt);
+          }
+          for (const p of this.players) p.preStep(dt);
+          this.physics.step(dt);
+          for (const p of this.players) p.postStep(dt, menu);
+          if (combat) this.match.update(dt);
+          if (ceremony) this._ceremonyFx(dt);
         }
-        for (const p of this.players) p.preStep(dt);
-        this.physics.step(dt);
-        for (const p of this.players) p.postStep(dt, menu);
         for (const p of this.players) p.pose(dt);
-        if (combat) this.match.update(dt);
-        if (ceremony) this._ceremonyFx(dt);
       }
     }
+
+    // net I/O
+    if (online) { if (client) this.mp.sendInput(); else this.mp.maybeSnapshot(dt); }
 
     this.arena.update(dt);
     this.fx.update(dt);

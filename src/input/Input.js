@@ -27,6 +27,11 @@ export class Input {
     addEventListener('keydown', e => {
       if (this.game.state !== 'playing') return;
       const k = e.key.toLowerCase(); const wasDown = this.keys[k]; this.keys[k] = true;
+      // online → queue the action edge; the host validates & applies it
+      if (this.game.mp.on) {
+        if (!wasDown) { const map = { ' ': 'jump', shift: 'dash', q: 'slam', e: 'grab' }; const act = map[k]; if (act) this.game.mp.queueAction(act); if (k === ' ') e.preventDefault(); }
+        return;
+      }
       const p = this._local(); if (!p) return;
       if (p.knockdown > 0) return;   // downed → wait to get up
       // grabbed → mash to escape (fresh presses only), dash = burst
@@ -104,6 +109,7 @@ export class Input {
       const act = b.dataset.act;
       b.addEventListener('pointerdown', e => {
         e.preventDefault(); e.stopPropagation();
+        if (this.game.mp.on) { this.game.mp.queueAction(act); return; }
         const p = this._local(); if (!p) return;
         if (p.knockdown > 0) return;
         if (p.grabbedBy) { p.addStruggle(act === 'dash' ? GRAB.struggleGainDash : GRAB.struggleGainMash); return; }

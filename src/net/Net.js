@@ -88,7 +88,9 @@ export class Net {
   setName(name) { this.opts.name = name; this.send({ t: 'setName', name }); }
   setConfig(count, rounds) { this.send({ t: 'config', count, rounds }); }
   start() { this.send({ t: 'start' }); }
+  toLobby() { this.send({ t: 'lobby' }); }
   input(input) { this.send({ t: 'input', input }); }
+  snapshot(s) { this.send({ t: 'snap', s }); }
 
   close() { this._want = false; this._stopPing(); try { this.ws && this.ws.close(); } catch {} this._setStatus('closed'); }
 
