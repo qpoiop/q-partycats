@@ -28,23 +28,34 @@ export class CameraRig {
 
   update(dt, game) {
     const menu = game.state === 'home' || game.state === 'lobby' || game.state === 'results';
-    if (menu) { this.menuClock += dt; this.az += dt * CAMERA.menuSpin; this.el += (CAMERA.menuElevation - this.el) * Math.min(1, dt * 2); }
-    else this.el += (CAMERA.playElevation - this.el) * Math.min(1, dt * 2);
+    const watching = game.state === 'playing' || game.state === 'countdown';
+    const h = game.players[0];
+    const falling = watching && h && h.falling && h.pos().y < -2;
 
-    // follow the human player during play
-    let fx = 0, fz = 0;
-    if (game.state === 'playing' || game.state === 'countdown') {
-      const h = game.players[0];
-      if (h && h.alive) { const hp = h.pos(); fx = hp.x * CAMERA.followFactor; fz = hp.z * CAMERA.followFactor; }
+    if (menu) { this.menuClock += dt; this.az += dt * CAMERA.menuSpin; }
+    const wantEl = menu ? CAMERA.menuElevation : (falling ? CAMERA.fallElevation : CAMERA.playElevation);
+    this.el += (wantEl - this.el) * Math.min(1, dt * 2.5);
+
+    // follow target (x/z drift + vertical descent while plunging)
+    let fx = 0, fz = 0, fy = 1;
+    if (watching && h && (h.alive || h.falling)) {
+      const hp = h.pos();
+      if (falling) { fx = hp.x; fz = hp.z; fy = hp.y + 2.5; }        // lock onto the falling cat
+      else {
+        fx = hp.x * CAMERA.followFactor; fz = hp.z * CAMERA.followFactor;
+        const fl = Math.hypot(fx, fz);
+        if (fl > CAMERA.followClamp) { fx = fx / fl * CAMERA.followClamp; fz = fz / fl * CAMERA.followClamp; }
+      }
     }
-    const fl = Math.hypot(fx, fz);
-    if (fl > CAMERA.followClamp) { fx = fx / fl * CAMERA.followClamp; fz = fz / fl * CAMERA.followClamp; }
-    this.target.x += (fx - this.target.x) * Math.min(1, dt * CAMERA.followLerp);
-    this.target.z += (fz - this.target.z) * Math.min(1, dt * CAMERA.followLerp);
+    const lerp = Math.min(1, dt * CAMERA.followLerp);
+    this.target.x += (fx - this.target.x) * lerp;
+    this.target.z += (fz - this.target.z) * lerp;
+    this.target.y += (fy - this.target.y) * Math.min(1, dt * (falling ? 4 : 2.5));
 
     const portrait = innerHeight > innerWidth;
     const set = menu ? CAMERA.menuDist : CAMERA.playDist;
-    const wantDist = portrait ? set.portrait : set.landscape;
+    let wantDist = portrait ? set.portrait : set.landscape;
+    if (falling) wantDist *= 1.25;   // pull back a touch to frame the drop
     this.dist += (wantDist - this.dist) * Math.min(1, dt * 2);
 
     const horiz = this.dist * Math.cos(this.el), cy = this.target.y + this.dist * Math.sin(this.el);

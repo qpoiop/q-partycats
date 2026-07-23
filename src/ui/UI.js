@@ -96,7 +96,7 @@ export class UI {
     const wrap = $('#playerCards'); wrap.innerHTML = '';
     this.game.players.forEach(p => {
       const c = document.createElement('div'); c.className = 'pcard'; c.id = 'pc' + p.idx;
-      c.innerHTML = `<div class="bar" style="background:${p.css}"></div><span class="nm">${p.name}${p.isBot ? ' · 봇' : ''}</span><span class="sc" id="sc${p.idx}">0</span>`;
+      c.innerHTML = `<span class="av" style="background:${p.css};color:${p.css}"></span><span class="nm">${p.name}${p.isBot ? ' · 봇' : ''}</span><span class="sc" id="sc${p.idx}">0</span>`;
       wrap.appendChild(c);
     });
   }

@@ -40,10 +40,11 @@ export class Match {
     const players = this.game.players, total = players.length;
     players.forEach((p, i) => {
       const sp = this._spawnRingPos(i, total);
+      p.body.setEnabled(true);
       p.body.setBodyType(RB.Dynamic, true);
       p.body.setTranslation(V(sp.x, BODY.restY, sp.z), true);
       p.body.setLinvel(V(0, 0, 0), true);
-      p.alive = true; p.dashCd = 0; p.dashTimer = 0; p.invuln = 0; p.slamming = false;
+      p.alive = true; p.falling = false; p.dashCd = 0; p.dashTimer = 0; p.invuln = 0; p.slamming = false;
       p.grabbing = null; p.grabbedBy = null; p.tumble = 0; p.squash = 0; p.knockTimer = 0;
       p.facing = Math.atan2(-sp.x, -sp.z); p.faceTarget = p.facing;
       p.group.visible = true; p.moveMag = 0; p.moveDir.set(0, 0);
@@ -76,8 +77,10 @@ export class Match {
     const a = this.game.actions;
     if (p.grabbing) a.releaseGrab(p);
     if (p.grabbedBy) a.releaseGrab(p.grabbedBy);
-    p.body.setEnabled(false); p.group.visible = false; p.shadow.visible = false;
-    this.game.fx.flash(0.35); this.game.fx.shake(0.6);
+    // don't freeze — let the body tumble into the abyss (Player hides it at abyssY)
+    p.falling = true;
+    p.tumble = 1; p.tumbleAxis.set(Math.random() - 0.5, 0.15, Math.random() - 0.5).normalize();
+    this.game.fx.flash(0.3); this.game.fx.shake(0.6);
     this.game.ui.showBanner(`${p.name} 아웃!`, p.css, 0.9);
     this.game.ui.updateHUD();
     this._checkRoundEnd();

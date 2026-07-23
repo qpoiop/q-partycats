@@ -34,13 +34,13 @@ export class Player {
     game.scene.add(this.group);
 
     this.ring = new THREE.Mesh(
-      new THREE.RingGeometry(0.5, 0.66, 28),
+      new THREE.RingGeometry(0.64, 0.82, 32),
       new THREE.MeshBasicMaterial({ color: t.hex, transparent: true, opacity: 0.9, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending }));
     this.ring.rotation.x = -Math.PI / 2; this.ring.position.y = 0.03;
     this.group.add(this.ring);
 
     this.shadow = new THREE.Mesh(
-      new THREE.CircleGeometry(0.58, 20),
+      new THREE.CircleGeometry(0.74, 24),
       new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.34, depthWrite: false }));
     this.shadow.rotation.x = -Math.PI / 2;
     game.scene.add(this.shadow);
@@ -56,6 +56,7 @@ export class Player {
     this.invuln = 0; this.slamming = false; this.knockTimer = 0;
     this.grabbing = null; this.grabbedBy = null; this.grabTimer = 0; this.grabCd = 0; this.struggle = 0;
     this.tumble = 0; this.tumbleAxis = new THREE.Vector3(1, 0, 0); this.squash = 0;
+    this.falling = false;
     this.botTimer = 0; this.wanderA = Math.random() * 6.28;
   }
 
@@ -172,9 +173,17 @@ export class Player {
     const t = this.pos();
     if (this.slamming && this.onGround) { this.game.actions.slamHit(this); this.slamming = false; }
 
-    if (t.y < this.game.ARENA.killY) {
-      if (menu) { this.game.match.respawnMenu(this); return; }
-      this.game.match.eliminate(this); return;
+    const A = this.game.ARENA;
+    if (menu) {
+      if (t.y < A.menuKillY) { this.game.match.respawnMenu(this); return; }
+    } else {
+      // combat: doomed the instant we drop past the platform edge — round
+      // resolves now, but the body keeps plunging into the abyss for drama.
+      if (this.alive && t.y < A.doomY) { this.game.match.eliminate(this); }
+      if (!this.alive && this.falling && t.y < A.abyssY) {
+        this.body.setEnabled(false); this.group.visible = false; this.shadow.visible = false; this.falling = false;
+        return;
+      }
     }
 
     const rate = this.onGround ? MOVE.turnRateGround : MOVE.turnRateAir;

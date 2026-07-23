@@ -24,17 +24,19 @@ export const ASSETS = {
 
 // ---------- arena ----------
 export const ARENA = {
-  radius: 14.0,      // platform radius
-  killY: -6,         // fall below → eliminated
+  radius: 13.0,      // platform radius (slightly tighter → cats read bigger)
   rimHeight: -0.02,
+  doomY: -2.5,       // below this while off-platform → out (round resolves now)
+  menuKillY: -6,     // attract mode: respawn instead of KO
+  abyssY: -230,      // body is hidden here after the ~5s plunge into the abyss
 };
 
 // ---------- character physical body ----------
 export const BODY = {
-  capHalfHeight: 0.37,
-  capRadius: 0.52,
+  capHalfHeight: 0.44,
+  capRadius: 0.6,
   density: 1.1,
-  visualHeight: 2.3,
+  visualHeight: 3.1,   // bigger, readable characters
   linearDamping: 0.2,
 };
 BODY.footOffset = BODY.capHalfHeight + BODY.capRadius; // center → feet
@@ -104,37 +106,38 @@ export const ANIM = {
   walkBlendSpeed: 1.4, // full walk weight reached here
 };
 
-/* ---------- CAMERA & RENDER DISTANCE (the "render distance" fix) ----------
-   Prototype: FogExp2 0.006 + far=500 + orbit dist up to 50 made the
-   arena wash out and edges fade into void. We switch to linear fog
-   tuned to the arena scale, matched to the sky horizon color, with a
-   larger environment skirt and shadow frustum sized to the whole scene. */
+/* ---------- CAMERA & RENDER ----------
+   Floating sky-island arena above a dark abyss. Fog is coloured to the
+   sky horizon so the skyline reads clean, while the void below is dark
+   geometry the players fall into. Camera sits closer so characters read. */
 export const RENDER = {
-  fov: 50,
+  fov: 52,
   near: 0.3,
-  far: 400,
-  fogColor: 0xbfe0ff,   // matches sky horizon → seamless fade, no hard cutoff
-  fogNear: 46,          // linear fog: fully clear well past the arena…
-  fogFar: 190,          // …hazes only the far sky/environment
+  far: 500,
+  fogColor: 0xbfe0ff,   // matches sky horizon
+  fogNear: 60,          // clear across the whole arena…
+  fogFar: 320,          // …only the far skyline hazes
+  abyssColor: 0x05060c, // the void the arena floats above
   pixelRatioCap: 2,
-  bloom: { strength: 0.45, radius: 0.6, threshold: 0.92 },
+  bloom: { strength: 0.42, radius: 0.6, threshold: 0.9 },
   exposure: 1.02,
   shadowMapSize: 2048,
-  shadowExtent: 26,     // half-width of shadow ortho frustum (covers arena + house)
+  shadowExtent: 22,     // covers the platform + edge decoration
   shadowFar: 90,
 };
 
 export const CAMERA = {
-  menuDist:   { landscape: 27, portrait: 34 },
-  playDist:   { landscape: 33, portrait: 44 },
-  minDist: 20,
-  maxDist: 60,
-  menuElevation: 0.52,
-  playElevation: 0.74,
-  followLerp: 3.2,
-  followFactor: 0.55,
-  followClamp: 8.0,
-  menuSpin: 0.026,
+  menuDist:   { landscape: 23, portrait: 28 },
+  playDist:   { landscape: 20, portrait: 27 },  // much closer → cats clearly visible
+  minDist: 14,
+  maxDist: 46,
+  menuElevation: 0.5,
+  playElevation: 0.66,
+  followLerp: 3.4,
+  followFactor: 0.42,   // less drift, arena stays framed
+  followClamp: 6.5,
+  menuSpin: 0.024,
+  fallElevation: 0.28,  // tilt down to watch the plunge
 };
 
 // ---------- match defaults ----------
