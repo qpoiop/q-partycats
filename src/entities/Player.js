@@ -139,7 +139,13 @@ export class Player {
     if (this.dashCd > 0) this.dashCd -= dt;
     if (this.dashTimer > 0) this.dashTimer -= dt;
     if (this.punchCd > 0) this.punchCd -= dt;
-    if (this.punching > 0) this.punching -= dt;
+    if (this.punching > 0) {
+      this.punching -= dt;
+      // land the hit mid-swing (after the wind-up), not on the button press
+      if (!this._punchDone && this.punching <= ABIL.punchTime * (1 - ABIL.punchStrikeFrac)) {
+        this._punchDone = true; this.game.actions.punchStrike(this);
+      }
+    }
     if (this.sliding > 0) this.sliding -= dt;
     if (this.invuln > 0) this.invuln -= dt;
     if (this.grabCd > 0) this.grabCd -= dt;

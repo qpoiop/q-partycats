@@ -50,12 +50,19 @@ export class Actions {
     this.game.fx.streak(p, dir);
   }
 
-  /** Punch (주먹치기) — the main attack: a quick forward jab that staggers. */
+  /** Punch (주먹치기) — the main attack: a quick forward jab. The wind-up plays
+      first; the actual contact lands mid-swing (Player fires punchStrike), so the
+      hit syncs with the paw instead of firing on the button press. */
   punch(p) {
     if (p.grabbedBy || p.knockdown > 0 || !p.alive) return;
     if (p.grabbing) { this.throw(p); return; }
     if (p.punchCd > 0) return;
-    p.punchCd = ABIL.punchCd; p.punching = ABIL.punchTime;   // drives the jab pose
+    p.punchCd = ABIL.punchCd; p.punching = ABIL.punchTime; p._punchDone = false;   // drives the jab pose
+  }
+
+  /** Contact frame of the jab — reach test + knockback, fired by Player when the
+      swing passes punchStrikeFrac. */
+  punchStrike(p) {
     const dir = p.faceVec(), me = p.pos();
     let hit = false;
     for (const o of this.game.players) {
