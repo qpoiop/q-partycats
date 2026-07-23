@@ -62,6 +62,7 @@ export class Player {
     this.struggle = 0;    // victim: escape meter (fills by mashing → break)
     this.tumble = 0; this.tumbleAxis = new THREE.Vector3(1, 0, 0); this._axisH = new THREE.Vector3(1, 0, 0); this.squash = 0;
     this._leanX = 0; this._leanZ = 0;   // persistent body-lean (transients add on top, no compounding)
+    this._wasGround = true; this._prevVy = 0;   // landing-squash detection
     this.knockdown = 0;   // >0 = downed: can't act, must get up
     this.teeter = 0; this._teetered = false;   // hanging/flailing at the ledge
     this.falling = false; this._splashed = false; this.celebrating = false;
@@ -123,6 +124,13 @@ export class Player {
     }
 
     this.onGround = this.game.physics.grounded(this.body, FOOT + 0.18);
+    // landing squash: touching down after a fall pops a compress-and-recover
+    // (scaled by how hard we hit) → jumps/plunges land with weight, not a snap.
+    if (this.onGround && !this._wasGround && this._prevVy < -4 && this.knockdown <= 0) {
+      this.squash = Math.min(0.45, -this._prevVy * 0.035);
+    }
+    this._wasGround = this.onGround;
+    this._prevVy = this.vel().y;
 
     // timers
     if (this.knockTimer > 0) this.knockTimer -= dt;
