@@ -34,7 +34,7 @@ export const ARENA = {
   doomY: -2.5,           // drop past the edge → out (round resolves immediately)
   menuKillY: -6,         // attract mode: respawn instead of KO
   // sea + underwater abyss (fall = splash at surface, then sink into the dark)
-  waterY: -6,            // sea surface right below the island → clearly visible around it
+  waterY: -12,           // sea below the island → island floats clearly above (not submerged)
   sinkDrag: 2.6,         // vertical damping once submerged → ~3-4s sink
   darkenRange: 22,       // depth (below waterY) over which the screen fades to black
   hideY: -42,            // body removed here, deep in the abyss
@@ -74,8 +74,8 @@ export const MOVE = {
   accelGround: 55,     // m/s^2 toward desired velocity (snappy)
   accelAir: 18,        // weaker air control
   frictionDecel: 34,   // m/s^2 braking when no input on ground
-  turnRateGround: 16,  // facing lerp rate (rad/s-ish)
-  turnRateAir: 8,
+  turnRateGround: 9,   // facing lerp rate — smooth, not whip-snappy
+  turnRateAir: 5,
   knockWindow: 0.34,   // s of no-steer after taking a hit (keeps knockback juicy)
   airDrag: 1.7,        // horizontal drag/s while airborne & knocked → arc down, don't fly straight
 };
@@ -90,15 +90,15 @@ export const ABIL = {
   dashAirLift: 2.6,
   dashInvuln: 0.45,
   dashTime: 0.4,       // active window (contact = strike)
-  dashStrikeGround: 4.2,   // moderate shove (was 6.5 → flew too far)
-  dashStrikeAir: 6.5,      // flying-kick punch (was 12.5)
-  dashStrikeAirLift: 5.2,  // …with a healthy pop up (arc, not a flat line)
+  dashStrikeGround: 3.0,   // gentle shove — one hit shouldn't mean instant death
+  dashStrikeAir: 5.0,      // flying-kick punch
+  dashStrikeAirLift: 5.0,  // …with a pop up (arc, not a flat line)
   slamDownVel: 17,
-  slamRadius: 4.6,
-  slamKnockBase: 3.5,
-  slamKnockScale: 9,
-  slamKnockLift: 7.0,
-  throwVel: 8.5,           // arc throw (was 13, too far/flat)
+  slamRadius: 4.4,
+  slamKnockBase: 3.0,
+  slamKnockScale: 7,
+  slamKnockLift: 6.5,
+  throwVel: 7.0,           // arc throw
   throwLift: 7.0,
 };
 
@@ -108,10 +108,10 @@ export const ABIL = {
    fighting the steering controller → no more contact jitter). Duration
    scales with the impact velocity. */
 export const KNOCKDOWN = {
-  threshold: 4.0,   // impact Δspeed (m/s) above which a cat is knocked down
-  minTime: 0.6,
-  maxTime: 1.4,
-  perSpeed: 0.06,   // extra downtime per m/s of impact over threshold
+  threshold: 5.5,   // only real hits knock down (light shoves are recoverable)
+  minTime: 0.45,
+  maxTime: 1.1,
+  perSpeed: 0.05,   // extra downtime per m/s of impact over threshold
   getup: 0.35,      // brief rise-and-vulnerable window as it stands
 };
 
@@ -203,7 +203,7 @@ export const MATCH = {
   roundEndDelay: 2.4,
   // sudden death: after sdTime the safe zone shrinks over closeTime, shoving
   // stragglers off the island → every round resolves (outermost falls first).
-  sdTime: 16,
-  closeTime: 9,
-  minSafe: 2.2,
+  sdTime: 26,
+  closeTime: 10,
+  minSafe: 2.5,
 };

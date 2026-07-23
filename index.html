@@ -70,7 +70,7 @@
 
   /* brand logo image (logo.png) — shown only once it loads, else the CSS wordmark stays */
   .brandImg{ display:none; }
-  #home .logo .brandImg{ width:min(560px,86vw); height:auto; max-height:38vh;
+  #home .logo .brandImg{ width:min(640px,94vw); height:auto; max-height:46vh;
      filter:drop-shadow(0 6px 0 rgba(74,47,54,.4)) drop-shadow(0 16px 30px rgba(0,0,0,.35)); }
   #home .logo.has-img .brandImg{ display:block; }
   #home .logo.has-img .w{ display:none; }
@@ -152,11 +152,15 @@
   .cfg .go{ margin-left:auto; display:flex; gap:12px; }
   .hint2{ font-weight:500; font-size:11px; opacity:.6; letter-spacing:0; text-transform:none; }
 
-  #home .join{ display:flex; gap:9px; margin-top:16px; position:relative; z-index:2; }
-  #home .join input{ width:min(240px,52vw); font-family:'Fredoka'; font-weight:500; font-size:15px; letter-spacing:1px; text-transform:uppercase; color:#fff;
-     background:rgba(255,255,255,.08); border:1.5px solid rgba(255,255,255,.16); border-radius:14px; padding:11px 16px; outline:none; transition:.18s; }
-  #home .join input::placeholder{ color:rgba(255,255,255,.42); text-transform:none; letter-spacing:.5px; }
-  #home .join input:focus{ border-color:rgba(255,217,138,.7); background:rgba(255,255,255,.12); }
+  #home .join{ display:flex; gap:10px; margin-top:18px; position:relative; z-index:2; align-items:center;
+     background:rgba(40,26,14,.42); backdrop-filter:blur(12px); border:1px solid rgba(255,214,150,.24);
+     padding:7px 7px 7px 8px; border-radius:18px; box-shadow:0 10px 30px -14px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.1); }
+  #home .join input{ width:min(230px,50vw); font-family:'Fredoka'; font-weight:600; font-size:15px; letter-spacing:1.5px; text-transform:uppercase; color:#fff3e0;
+     background:transparent; border:none; padding:9px 10px; outline:none; }
+  #home .join input::placeholder{ color:rgba(255,231,188,.5); text-transform:none; letter-spacing:.3px; font-weight:500; }
+  #home .join .btn{ background:linear-gradient(176deg,#ffcf6b,#e79a2c); color:#3c2a0c;
+     box-shadow:0 1px 0 rgba(255,255,255,.4) inset, 0 -3px 8px rgba(150,95,10,.35) inset, 0 8px 20px -6px rgba(230,150,40,.55); }
+  #home .join .btn:active{ box-shadow:0 1px 0 rgba(255,255,255,.3) inset, 0 -2px 6px rgba(120,70,5,.4) inset, 0 4px 10px -4px rgba(200,130,35,.5); }
 
   /* ---------- HUD ---------- */
   #hud{ pointer-events:none; }
@@ -178,7 +182,7 @@
      background:rgba(10,8,20,.42); backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,.1);
      padding:5px 14px; border-radius:99px; text-shadow:0 2px 6px rgba(0,0,0,.4); }
 
-  #stickZone{ position:absolute; left:0; bottom:0; width:46%; height:60%; pointer-events:auto; }
+  #stickZone{ position:absolute; left:0; bottom:0; width:46%; height:60%; pointer-events:auto; touch-action:none; -webkit-user-select:none; user-select:none; }
   #stick{ position:absolute; width:132px; height:132px; border-radius:50%; display:none;
      background:radial-gradient(circle at 50% 35%,rgba(255,255,255,.16),rgba(255,255,255,.05)); border:2px solid rgba(255,255,255,.35); box-shadow:0 8px 30px rgba(0,0,0,.4);}
   #stick .knob{ position:absolute; left:50%; top:50%; width:62px; height:62px; margin:-31px; border-radius:50%;
@@ -187,7 +191,7 @@
   /* action pad — a tidy 2×2 grid, no overlap; jump is the primary (bottom-right) */
   #btns{ position:absolute; right:calc(env(safe-area-inset-right,0) + 22px); bottom:calc(env(safe-area-inset-bottom,0) + 22px);
      display:grid; grid-template-columns:repeat(2,56px); grid-auto-rows:56px; gap:16px; pointer-events:none; }
-  .abtn{ position:relative; width:56px; height:56px; border-radius:16px; pointer-events:auto; color:#fff; font-weight:700; font-size:12.5px;
+  .abtn{ position:relative; width:56px; height:56px; border-radius:16px; pointer-events:auto; touch-action:none; -webkit-user-select:none; user-select:none; color:#fff; font-weight:700; font-size:12.5px;
      border:none; display:flex; flex-direction:column; align-items:center; justify-content:center; line-height:1; overflow:hidden;
      box-shadow:0 1px 0 rgba(255,255,255,.28) inset, 0 -3px 8px rgba(0,0,0,.24) inset, 0 8px 16px -7px rgba(0,0,0,.5);
      transition:transform .09s cubic-bezier(.3,.9,.4,1), filter .09s;}

@@ -9,14 +9,14 @@ export function renderPortraits(renderer, proto, teams) {
   scene.add(new THREE.HemisphereLight(0xffffff, 0x445, 1.1));
   const d = new THREE.DirectionalLight(0xffffff, 2.2); d.position.set(2, 3, 3); scene.add(d);
   const cam = new THREE.PerspectiveCamera(32, 1, 0.1, 50);
-  cam.position.set(1.1, 0.95, 2.4); cam.lookAt(0, 0.5, 0);
+  cam.position.set(3.4, 2.4, 5.9); cam.lookAt(0, 1.5, 0);   // pulled back to frame the whole cat
 
   const prevAlpha = renderer.getClearAlpha();
   const prevColor = renderer.getClearColor(new THREE.Color());
   const thumbs = {};
   teams.forEach((t, ti) => {
     const cat = new Cat(proto, t.hex);
-    cat.model.rotation.y = -0.5; scene.add(cat.model);
+    cat.model.rotation.y = 0.5; scene.add(cat.model);   // face toward the camera
     renderer.setClearColor(0x000000, 0);
     renderer.setRenderTarget(rt); renderer.clear(); renderer.render(scene, cam);
     const buf = new Uint8Array(320 * 320 * 4);
