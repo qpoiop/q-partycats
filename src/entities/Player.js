@@ -59,7 +59,7 @@ export class Player {
     this.struggle = 0;    // victim: escape meter (fills by mashing → break)
     this.tumble = 0; this.tumbleAxis = new THREE.Vector3(1, 0, 0); this.squash = 0;
     this.knockdown = 0;   // >0 = downed: can't act, must get up
-    this.falling = false; this._splashed = false;
+    this.falling = false; this._splashed = false; this.celebrating = false;
     this.botTimer = 0; this.wanderA = Math.random() * 6.28;
   }
 
@@ -267,6 +267,21 @@ export class Player {
     const t = this.pos(), v = this.vel();
     this.group.position.set(t.x, t.y - FOOT, t.z);
     this.group.rotation.y = this.facing;
+
+    // victory hop + spin
+    if (this.celebrating) {
+      const now = performance.now() * 0.001;
+      this.group.rotation.y = now * 2.2;
+      const hop = Math.abs(Math.sin(now * 3.2));
+      this.cat.model.position.y = hop * 0.5;
+      this.tilt.rotation.set(0, 0, 0);
+      this.tilt.scale.set(1 + (1 - hop) * 0.12, 1 - (1 - hop) * 0.12, 1 + (1 - hop) * 0.12);
+      this.cat.updateAnimation(dt, 2.4, true, false);
+      this.shadow.visible = true;
+      this.shadow.position.set(this.group.position.x, 0.04, this.group.position.z);
+      this.shadow.scale.setScalar(1); this.shadow.material.opacity = 0.34;
+      return;
+    }
 
     this.squash += (0 - this.squash) * Math.min(1, dt * 8);
     let sx = 1, sy = 1;

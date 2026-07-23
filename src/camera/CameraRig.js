@@ -46,14 +46,19 @@ export class CameraRig {
     const watching = game.state === 'playing' || game.state === 'countdown';
     const h = game.players[0];
     const falling = watching && h && (h.falling || (!h.alive && h.group.visible)) && h.pos().y < ARENA.doomY;
+    const ceremony = game.state === 'ceremony';
 
     if (menu) { this.menuClock += dt; this.az += dt * CAMERA.menuSpin; }
-    const wantEl = menu ? CAMERA.menuElevation : (falling ? CAMERA.fallElevation : CAMERA.playElevation);
+    if (ceremony) this.az += dt * 0.45;   // slow victory orbit around the hero
+    const wantEl = menu ? CAMERA.menuElevation : falling ? CAMERA.fallElevation : ceremony ? 0.34 : CAMERA.playElevation;
     this.el += (wantEl - this.el) * Math.min(1, dt * 2.5);
 
     // ---- framing target ----
     let fx = 0, fz = 0, fy = 1;
-    if (falling) {
+    if (ceremony) {
+      const ch = game.champion;
+      if (ch) { const q = ch.pos(); fx = q.x; fz = q.z; fy = q.y + 0.9; }   // heroic close-up
+    } else if (falling) {
       const hp = h.pos(); fx = hp.x; fz = hp.z; fy = hp.y + 2.5;   // lock onto the plunge
     } else if (watching) {
       // centroid of the living cats, clamped near centre
@@ -69,11 +74,16 @@ export class CameraRig {
     this.target.y += (fy - this.target.y) * Math.min(1, dt * (falling ? 4 : 2.5));
 
     // ---- derived distance ----
-    const margin = menu ? CAMERA.framingMargin.menu : CAMERA.framingMargin.play;
-    let wantDist = this.framingDistance(ARENA.radius * margin) + this._userDist;
-    if (falling) wantDist *= 1.3;
-    wantDist = THREE.MathUtils.clamp(wantDist, CAMERA.minDist, CAMERA.maxDist);
-    this.dist += (wantDist - this.dist) * Math.min(1, dt * 2);
+    let wantDist;
+    if (ceremony) {
+      wantDist = 8.5;   // close-up on the champion
+    } else {
+      const margin = menu ? CAMERA.framingMargin.menu : CAMERA.framingMargin.play;
+      wantDist = this.framingDistance(ARENA.radius * margin) + this._userDist;
+      if (falling) wantDist *= 1.3;
+      wantDist = THREE.MathUtils.clamp(wantDist, CAMERA.minDist, CAMERA.maxDist);
+    }
+    this.dist += (wantDist - this.dist) * Math.min(1, dt * (ceremony ? 2.5 : 2));
 
     const horiz = this.dist * Math.cos(this.el), cy = this.target.y + this.dist * Math.sin(this.el);
     const cam = this.camera;

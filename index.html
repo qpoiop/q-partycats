@@ -227,6 +227,24 @@
   #countdown{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none; z-index:6;}
   #countdown .n{ font-family:'Paytone One'; font-size:min(30vh,320px); color:#fff; text-shadow:0 3px 3px rgba(0,0,0,.4), 0 0 70px rgba(240,200,130,.55);}
 
+  /* victory ceremony — text top & bottom, hero cat visible in the middle */
+  #ceremony{ position:absolute; inset:0; pointer-events:none; z-index:7; display:none; flex-direction:column;
+     align-items:center; justify-content:space-between; padding:7vh 20px 9vh; opacity:0; transition:opacity .6s;
+     background:radial-gradient(120% 80% at 50% 30%, rgba(255,210,120,.14), transparent 60%); }
+  #ceremony.on{ display:flex; opacity:1; }
+  #ceremony .cer-top{ text-align:center; }
+  #ceremony .crown{ font-family:'Paytone One'; font-size:clamp(15px,3vw,26px); letter-spacing:7px; color:#ffd98a;
+     text-shadow:0 2px 12px rgba(0,0,0,.6); animation:cerCrown 2.4s ease-in-out infinite; }
+  @keyframes cerCrown{ 0%,100%{ transform:translateY(0);} 50%{ transform:translateY(-4px);} }
+  #ceremony .champ{ font-family:'Bagel Fat One',system-ui; font-size:clamp(42px,10vw,104px); line-height:1; margin-top:6px;
+     -webkit-text-stroke:4px #4a2f36; paint-order:stroke fill;
+     filter:drop-shadow(0 5px 0 rgba(74,47,54,.4)) drop-shadow(0 18px 40px rgba(0,0,0,.5)); animation:cerPop .6s cubic-bezier(.2,1.5,.4,1) both; }
+  @keyframes cerPop{ 0%{ opacity:0; transform:scale(.4) rotate(-6deg);} 60%{ opacity:1; transform:scale(1.1) rotate(2deg);} 100%{ transform:scale(1);} }
+  #ceremony .line{ font-family:'Fredoka'; font-weight:600; font-size:clamp(15px,2.6vw,22px); color:#fff; text-align:center;
+     text-shadow:0 2px 10px rgba(0,0,0,.6); background:rgba(0,0,0,.3); padding:10px 24px; border-radius:99px; backdrop-filter:blur(6px);
+     border:1px solid rgba(255,255,255,.14); animation:cerLineIn .5s .3s ease both; }
+  @keyframes cerLineIn{ from{ opacity:0; transform:translateY(10px);} to{ opacity:1; transform:none;} }
+
   /* results */
   #results{ display:flex; align-items:center; justify-content:center; background:radial-gradient(120% 90% at 50% 120%, transparent, rgba(8,6,16,.55)); }
   #results .panel{ width:min(640px,92vw); text-align:center; border-radius:30px; padding:30px 24px 26px; position:relative; overflow:hidden; }
@@ -374,6 +392,12 @@
   <div id="wipe" class="fill"></div>
   <div id="countdown" class="fill hide"><div class="n"></div></div>
   <div id="banner" class="fill"><div class="txt"></div></div>
+
+  <!-- VICTORY CEREMONY (3D hero shows behind) -->
+  <div id="ceremony">
+    <div class="cer-top"><div class="crown">CHAMPION</div><div class="champ" id="cerName">—</div></div>
+    <div class="line" id="cerLine">최후의 1냥!</div>
+  </div>
 
   <!-- RESULTS -->
   <div id="results" class="fill screen hide">

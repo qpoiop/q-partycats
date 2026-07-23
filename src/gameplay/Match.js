@@ -141,9 +141,37 @@ export class Match {
   }
 
   endMatch() {
-    this.game.state = 'results';
-    this.game.players.forEach(p => { if (p.alive) p.body.setEnabled(false); });
     const ranked = [...this.game.players].sort((a, b) => b.score - a.score);
+    const win = ranked[0];
+    const draw = ranked.length > 1 && ranked[1].score === win.score;  // tie at the top
+    this.game.state = 'ceremony';
+    this.game.champion = draw ? null : win;
+    this.game.safeRadius = ARENA.radius;
+    this.game.arena.setDanger(ARENA.radius, false);
+
+    const RB = this.game.physics.RAPIER.RigidBodyType;
+    this.game.players.forEach(p => {
+      if (!draw && p === win) {
+        // stage the champion centre-stage, triumphant
+        p.body.setEnabled(true); p.body.setBodyType(RB.Dynamic, true);
+        p.body.setTranslation(V(0, BODY.restY, 0), true); p.body.setLinvel(V(0, 0, 0), true);
+        p.alive = true; p.falling = false; p.knockdown = 0; p.tumble = 0; p.squash = 0;
+        p.grabbing = null; p.grabbedBy = null;
+        p.facing = 0; p.faceTarget = 0; p.group.visible = true; p.celebrating = true;
+      } else {
+        p.body.setEnabled(false); p.group.visible = false; p.shadow.visible = false; p.alive = false; p.celebrating = false;
+      }
+    });
+    this.game.ui.showScreen('ceremony');   // hide the HUD; the 3D hero stays visible
+    this.game.ui.showCeremony(this.game.champion, draw ? '무승부!' : `${win.name} 우승!`);
+    setTimeout(() => this._toResults(ranked), 4300);
+  }
+
+  _toResults(ranked) {
+    this.game.champion = null;
+    this.game.players.forEach(p => { p.celebrating = false; p.cat.model.position.y = 0; if (p.alive) p.body.setEnabled(false); });
+    this.game.ui.hideCeremony();
+    this.game.state = 'results';
     this.game.ui.showResults(ranked, ranked[0]);
   }
 }

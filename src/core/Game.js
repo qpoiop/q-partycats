@@ -32,6 +32,7 @@ export class Game {
     this.thumbs = {};
     this.state = 'boot';
     this.safeRadius = ARENA.radius;   // sudden-death storm zone (shrinks late round)
+    this.champion = null;             // set during the victory ceremony
 
     // render core (sync, no assets needed)
     this.canvas = document.getElementById('c');
@@ -81,6 +82,17 @@ export class Game {
     setTimeout(() => this.ui.hideLoader(stopLoaderFx), 300);
   }
 
+  _ceremonyFx(dt) {
+    const ch = this.champion; if (!ch) return;
+    this._cerFxT = (this._cerFxT || 0) - dt;
+    if (this._cerFxT <= 0) {
+      this._cerFxT = 0.26;
+      const p = ch.pos();
+      this.fx.dust({ x: p.x, y: p.y + 1.8, z: p.z }, ch.hex, 12, 1.8);
+      if (Math.random() < 0.6) this.fx.dust({ x: p.x + (Math.random() - 0.5) * 3, y: p.y + 2.4, z: p.z + (Math.random() - 0.5) * 3 }, 0xffffff, 8, 1.3);
+    }
+  }
+
   enterLobby(code) {
     this.ui.setRoomCode(code || ('CAT-' + (100 + Math.floor(Math.random() * 899))));
     this.ui.renderLobby();
@@ -102,7 +114,8 @@ export class Game {
     if (this.physics && this.players.length) {
       const combat = this.state === 'playing' || this.state === 'countdown';
       const menu = this.state === 'home' || this.state === 'lobby' || this.state === 'results';
-      if (combat || menu) {
+      const ceremony = this.state === 'ceremony';
+      if (combat || menu || ceremony) {
         if (menu || (this.state === 'playing' && this.match.roundActive)) {
           for (const p of this.players) if (p.isBot) this.bot.update(p, dt);
         }
@@ -111,6 +124,7 @@ export class Game {
         for (const p of this.players) p.postStep(dt, menu);
         for (const p of this.players) p.pose(dt);
         if (combat) this.match.update(dt);
+        if (ceremony) this._ceremonyFx(dt);
       }
     }
 

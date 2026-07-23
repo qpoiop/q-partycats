@@ -18,6 +18,9 @@ export class UI {
     this._struggleFill = this._struggleBar.querySelector('.fill');
     this._gripFill = this._gripBar.querySelector('.fill');
     this._dark = $('#dark');
+    this._ceremony = $('#ceremony');
+    this._cerName = $('#cerName');
+    this._cerLine = $('#cerLine');
     this._injectKeyframes();
     this._wireButtons();
   }
@@ -158,6 +161,18 @@ export class UI {
     };
     step();
   }
+
+  // ---------- victory ceremony ----------
+  showCeremony(win, line) {
+    this._cerName.textContent = win ? win.name : '무승부';
+    this._cerName.style.color = win ? win.css : '#ffffff';
+    this._cerLine.textContent = line || (win ? '최후의 1냥!' : '아무도 살아남지 못했다…');
+    // replay the pop animations
+    this._ceremony.classList.remove('on'); void this._ceremony.offsetWidth;
+    this._ceremony.classList.add('on');
+    this.game.fx.confetti(this._ceremony);
+  }
+  hideCeremony() { this._ceremony.classList.remove('on'); }
 
   // ---------- results ----------
   showResults(ranked, win) {
