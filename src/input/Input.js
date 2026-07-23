@@ -29,7 +29,7 @@ export class Input {
       const k = e.key.toLowerCase(); const wasDown = this.keys[k]; this.keys[k] = true;
       // online → queue the action edge; the host validates & applies it
       if (this.game.mp.on) {
-        if (!wasDown) { const map = { ' ': 'jump', shift: 'dash', q: 'slam', e: 'grab' }; const act = map[k]; if (act) this.game.mp.queueAction(act); if (k === ' ') e.preventDefault(); }
+        if (!wasDown) { const map = { ' ': 'jump', shift: 'dash', q: 'punch', e: 'grab' }; const act = map[k]; if (act) this.game.mp.queueAction(act); if (k === ' ') e.preventDefault(); }
         return;
       }
       const p = this._local(); if (!p) return;
@@ -45,7 +45,7 @@ export class Input {
       const a = this.game.actions;
       if (k === ' ') { e.preventDefault(); a.jump(p); }
       if (k === 'shift') a.dash(p);
-      if (k === 'q') a.slam(p);
+      if (k === 'q') a.punch(p);
       if (k === 'e') a.grab(p);
     });
     addEventListener('keyup', e => { this.keys[e.key.toLowerCase()] = false; });
@@ -116,7 +116,7 @@ export class Input {
         const a = this.game.actions;
         if (act === 'jump') a.jump(p);
         if (act === 'dash') a.dash(p);
-        if (act === 'slam') a.slam(p);
+        if (act === 'punch') a.punch(p);
         if (act === 'grab') a.grab(p);
       });
     });

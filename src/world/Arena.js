@@ -24,21 +24,6 @@ export class Arena {
     this._buildPlatform();
     this._buildDecor();
     this._buildMotes();
-    this._buildDangerRing();
-  }
-
-  _buildDangerRing() {
-    const m = new THREE.Mesh(
-      new THREE.TorusGeometry(1, 0.04, 8, 80),
-      new THREE.MeshBasicMaterial({ color: 0xff5230, transparent: true, opacity: 0.9, depthWrite: false, blending: THREE.AdditiveBlending }));
-    m.rotation.x = -Math.PI / 2; m.position.y = 0.18; m.visible = false; m.frustumCulled = false;
-    this._danger = m; this.group.add(m);
-  }
-
-  /** Sudden-death storm ring at the shrinking safe radius. */
-  setDanger(radius, active) {
-    const m = this._danger; m.visible = active;
-    if (active) m.scale.set(radius, radius, 1);
   }
 
   _buildSky() {
@@ -95,15 +80,25 @@ export class Arena {
      the surface with a gentle vertex-wave shimmer, calm and fully blue. */
   addWater(_gltf) {
     const geo = new THREE.CircleGeometry(820, 128);
-    const mat = new THREE.MeshStandardMaterial({ color: 0x2f7ec4, roughness: 0.32, metalness: 0.18 });
+    const mat = new THREE.MeshStandardMaterial({ color: 0x2f7ec4, roughness: 0.3, metalness: 0.2 });
     mat.onBeforeCompile = (sh) => {
       sh.uniforms.uTime = { value: 0 };
       this._seaU = sh.uniforms.uTime;
-      sh.vertexShader = 'uniform float uTime;\n' + sh.vertexShader.replace(
+      sh.vertexShader = 'uniform float uTime;\nvarying float vWave;\n' + sh.vertexShader.replace(
         '#include <begin_vertex>',
         `#include <begin_vertex>
-         float w = sin(position.x * 0.05 + uTime * 1.1) * 0.5 + cos(position.y * 0.045 - uTime * 0.9) * 0.5;
-         transformed.z += w * 0.9;`,               // gentle swell (local z → world height after the -90° tilt)
+         float w = sin(position.x * 0.04 + uTime * 1.2) * 0.6
+                 + cos(position.y * 0.05 - uTime * 1.0) * 0.5
+                 + sin((position.x + position.y) * 0.09 + uTime * 1.7) * 0.3;
+         vWave = w;
+         transformed.z += w * 2.4;`,               // visible swell
+      );
+      // moving light/dark ripples + crest highlights so the motion actually reads
+      sh.fragmentShader = 'varying float vWave;\n' + sh.fragmentShader.replace(
+        '#include <color_fragment>',
+        `#include <color_fragment>
+         diffuseColor.rgb *= 0.78 + 0.38 * (vWave * 0.5 + 0.5);
+         diffuseColor.rgb += vec3(0.06, 0.13, 0.18) * smoothstep(0.75, 1.1, vWave);`,
       );
     };
     const sea = new THREE.Mesh(geo, mat);
@@ -250,7 +245,6 @@ export class Arena {
 
   update(dt) {
     if (this._seaU) this._seaU.value += dt;
-    if (this._danger.visible) this._danger.material.opacity = 0.55 + 0.4 * Math.sin(performance.now() * 0.008);
     const N = this._moteN, pos = this._motePos, vel = this._moteVel;
     for (let i = 0; i < N; i++) {
       pos[i * 3 + 1] += vel[i] * dt;

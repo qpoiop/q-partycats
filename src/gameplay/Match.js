@@ -70,7 +70,7 @@ export class Match {
       p.body.setBodyType(RB.Dynamic, true);
       p.body.setTranslation(V(sp.x, BODY.restY, sp.z), true);
       p.body.setLinvel(V(0, 0, 0), true);
-      p.alive = true; p.falling = false; p.dashCd = 0; p.dashTimer = 0; p.invuln = 0; p.slamming = false;
+      p.alive = true; p.falling = false; p.dashCd = 0; p.dashTimer = 0; p.invuln = 0; p.punchCd = 0; p.punching = 0; p.sliding = 0;
       p.grabbing = null; p.grabbedBy = null; p.grip = 0; p.struggle = 0; p.tumble = 0; p.squash = 0; p.knockTimer = 0; p.knockdown = 0; p.teeter = 0; p._teetered = false;
       p.facing = Math.atan2(-sp.x, -sp.z); p.faceTarget = p.facing;
       p.group.visible = true; p.moveMag = 0; p.moveDir.set(0, 0);
@@ -89,8 +89,6 @@ export class Match {
   startRound() {
     this.placeAll();
     this.roundTime = 0;
-    this.game.safeRadius = ARENA.radius;
-    this.game.arena.setDanger(ARENA.radius, false);
     this.game.ui.updateHUD();
     this.game.ui.roundTag(`ROUND ${this.roundNum} / ${this.game.config.rounds}`);
     this.roundActive = false;
@@ -143,20 +141,24 @@ export class Match {
   update(dt) {
     if (this.roundActive) {
       this.roundTime += dt;
-      let r = ARENA.radius;
-      const over = this.roundTime - MATCH.sdTime;
-      if (over > 0) {
-        const prog = Math.min(1, over / MATCH.closeTime);
-        r = ARENA.radius - (ARENA.radius - MATCH.minSafe) * prog;
-      }
-      this.game.safeRadius = r;
-      this.game.arena.setDanger(r, over > 0);
+      if (this.roundTime > MATCH.maxRound) this._timeUp();   // time cap → round ends
     }
     if (this.roundEndTimer > 0) {
       this.roundEndTimer -= dt;
       if (this.roundEndTimer <= 0) this._nextRoundOrEnd();
     }
     this.game.ui.updateCooldowns();
+  }
+
+  _timeUp() {
+    if (this.roundEndTimer > 0 || !this.roundActive) return;
+    this.roundActive = false;
+    const alive = this.game.players.filter(p => p.alive);
+    const w = alive.length === 1 ? alive[0] : null;   // single survivor wins, else draw
+    if (w) w.score++;
+    this.game.ui.updateHUD();
+    this.roundEndTimer = MATCH.roundEndDelay;
+    setTimeout(() => this.game.ui.showBanner(w ? `${w.name} 라운드 승리!` : '시간 종료!', w ? w.css : '#fff', 1.8), 400);
   }
 
   _nextRoundOrEnd() {
@@ -171,8 +173,6 @@ export class Match {
     const draw = ranked.length > 1 && ranked[1].score === win.score;  // tie at the top
     this.game.state = 'ceremony';
     this.game.champion = draw ? null : win;
-    this.game.safeRadius = ARENA.radius;
-    this.game.arena.setDanger(ARENA.radius, false);
 
     const RB = this.game.physics.RAPIER.RigidBodyType;
     this.game.players.forEach(p => {

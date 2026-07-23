@@ -55,7 +55,8 @@ export class Player {
     this.facing = 0; this.faceTarget = 0;
     this.moveDir = new THREE.Vector2(); this.moveMag = 0; this.onGround = true;
     this.dashCd = 0; this.dashTimer = 0; this.dashAir = false;
-    this.invuln = 0; this.slamming = false; this.knockTimer = 0;
+    this.punchCd = 0; this.punching = 0; this.sliding = 0;
+    this.invuln = 0; this.knockTimer = 0;
     this.grabbing = null; this.grabbedBy = null; this.grabCd = 0;
     this.grip = 0;        // grabber: remaining grip (drains → break)
     this.struggle = 0;    // victim: escape meter (fills by mashing → break)
@@ -122,20 +123,13 @@ export class Player {
 
     this.onGround = this.game.physics.grounded(this.body, FOOT + 0.18);
 
-    // sudden-death storm: shoved outward if caught outside the shrinking safe zone
-    if (this.game.state === 'playing' && this.game.safeRadius < this.game.ARENA.radius) {
-      const t = this.pos(), d = Math.hypot(t.x, t.z), over = d - this.game.safeRadius;
-      if (over > 0) {
-        const nx = t.x / (d || 1), nz = t.z / (d || 1), v = this.vel();
-        const target = 3 + over * 3, outV = v.x * nx + v.z * nz;
-        if (outV < target) { const add = target - outV; this.body.setLinvel(V(v.x + nx * add, v.y, v.z + nz * add), true); }
-      }
-    }
-
     // timers
     if (this.knockTimer > 0) this.knockTimer -= dt;
     if (this.dashCd > 0) this.dashCd -= dt;
     if (this.dashTimer > 0) this.dashTimer -= dt;
+    if (this.punchCd > 0) this.punchCd -= dt;
+    if (this.punching > 0) this.punching -= dt;
+    if (this.sliding > 0) this.sliding -= dt;
     if (this.invuln > 0) this.invuln -= dt;
     if (this.grabCd > 0) this.grabCd -= dt;
     if (this.knockdown > 0) this.knockdown -= dt;
@@ -152,7 +146,7 @@ export class Player {
     }
 
     const downed = this.knockdown > 0;
-    const steerable = !downed && this.knockTimer <= 0 && this.dashTimer <= 0 && !this.slamming;
+    const steerable = !downed && this.knockTimer <= 0 && this.dashTimer <= 0;
     if (steerable) this._steer(dt);
     else if (downed && this.onGround) {
       // lying on the ground → grind to a stop (no steering fighting contacts)
@@ -237,7 +231,7 @@ export class Player {
       if (d < reach && d > 1e-3) {
         const nx = dx / d, nz = dz / d;
         const pw = this.dashAir ? this.game.ABIL.dashStrikeAir : this.game.ABIL.dashStrikeGround;
-        const lift = this.dashAir ? this.game.ABIL.dashStrikeAirLift : 0.9;
+        const lift = this.dashAir ? this.game.ABIL.dashStrikeAirLift : this.game.ABIL.dashStrikeGroundLift;
         const om = o.mass();
         o.hit(nx * pw * om, lift * om, nz * pw * om,
           this.dashAir ? { tumble: 1, axis: new THREE.Vector3(nz, 0.3, -nx) } : {});
@@ -254,7 +248,6 @@ export class Player {
   // ============================================================
   postStep(dt, menu) {
     const t = this.pos();
-    if (this.slamming && this.onGround) { this.game.actions.slamHit(this); this.slamming = false; }
 
     const A = this.game.ARENA;
     if (menu) {

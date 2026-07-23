@@ -1,4 +1,4 @@
-import { TEAMS, BOT_NAMES, MATCH, ABIL } from '../config.js';
+import { TEAMS, BOT_NAMES, MATCH, ABIL, GRAB } from '../config.js';
 
 const $ = s => document.querySelector(s);
 
@@ -150,9 +150,9 @@ export class UI {
     const p = this.game.players[0]; if (!p) return;
     const set = (a, v) => { const el = document.querySelector(`[data-cool="${a}"]`); if (el) el.style.transform = 'scaleY(' + Math.max(0, Math.min(1, v)) + ')'; };
     set('dash', p.dashCd / ABIL.dashCd);
-    set('grab', p.grabCd / ABIL.grabCd);
+    set('grab', p.grabCd / GRAB.cd);
     set('jump', p.onGround ? 0 : 0.6);
-    set('slam', p.onGround ? 0 : 0);
+    set('punch', p.punchCd / ABIL.punchCd);
   }
 
   /** grip/struggle bars for the local player's grab state */

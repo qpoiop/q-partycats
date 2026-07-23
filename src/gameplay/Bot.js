@@ -75,9 +75,9 @@ export class Bot {
       // if holding someone, hurl them straight off the nearest edge
       if (p.grabbing) { const a = Math.atan2(tp.x, tp.z); p.facing = a; p.faceTarget = a; A.throw(p); return; }
       p.facing = Math.atan2(tp.x - me.x, tp.z - me.z);       // aim at the target
-      if (td < 1.7 && p.grabCd <= 0 && Math.random() < 0.32) A.grab(p);       // grab up close
-      else if (td < 4.5 && p.dashCd <= 0 && Math.random() < 0.72) A.dash(p);  // dash-shove (the KO tool)
-      else if (!p.onGround && !p.slamming && td < ABIL.slamRadius) A.slam(p);
+      if (td < ABIL.punchReach + 0.3 && p.punchCd <= 0 && Math.random() < 0.7) A.punch(p);  // jab up close
+      else if (td < 1.7 && p.grabCd <= 0 && Math.random() < 0.3) A.grab(p);                  // or grab
+      else if (td < 4.5 && p.dashCd <= 0 && Math.random() < 0.6) A.dash(p);                  // dash-shove
     }
   }
 }

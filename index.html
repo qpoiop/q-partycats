@@ -200,7 +200,7 @@
   .abtn span{ position:relative; }
   .abtn:active{ transform:translateY(2px) scale(.97); filter:brightness(.95); }
   .abtn.grab{ grid-column:1; grid-row:1; background:linear-gradient(176deg,#ecc76b,#c99a2c); color:#3c2c0c;}
-  .abtn.slam{ grid-column:2; grid-row:1; background:linear-gradient(176deg,#8f80ee,#5a46bd);}
+  .abtn.punch{ grid-column:2; grid-row:1; background:linear-gradient(176deg,#ef6a8a,#c9324f);}
   .abtn.dash{ grid-column:1; grid-row:2; background:linear-gradient(176deg,#ef8555,#d9552b);}
   .abtn.jump{ grid-column:2; grid-row:2; background:linear-gradient(176deg,#48d494,#22a86c);}
   .abtn.cool{ position:absolute; inset:0; background:rgba(0,0,0,.5); transform-origin:bottom; transition:transform .05s linear; pointer-events:none; }
@@ -379,13 +379,13 @@
     <div id="btns">
       <button class="abtn jump" data-act="jump"><span>점프</span><small>SPACE</small><div class="cool" data-cool="jump" style="transform:scaleY(0)"></div></button>
       <button class="abtn dash" data-act="dash"><span>대시</span><small>SHIFT</small><div class="cool" data-cool="dash" style="transform:scaleY(0)"></div></button>
-      <button class="abtn slam" data-act="slam"><span>슬램</span><small>Q</small><div class="cool" data-cool="slam" style="transform:scaleY(0)"></div></button>
+      <button class="abtn punch" data-act="punch"><span>주먹</span><small>Q</small><div class="cool" data-cool="punch" style="transform:scaleY(0)"></div></button>
       <button class="abtn grab" data-act="grab"><span>잡기</span><small>E</small><div class="cool" data-cool="grab" style="transform:scaleY(0)"></div></button>
     </div>
     <div id="camHint">DRAG TO ROTATE</div>
-    <div id="kbHint">WASD 이동 · SPACE 점프 · SHIFT 대시/구르기 · Q 슬램 · E 잡기/던지기 · 마우스 드래그 시점</div>
+    <div id="kbHint">WASD 이동 · SPACE 점프 · Q 주먹 · SHIFT 대시 · E 잡기/던지기 · 점프+대시=날라차기 · 점프+잡기=슬라이딩</div>
     <div id="grabUI">
-      <div class="gbar struggle"><div class="lab">연타해서 탈출!</div><div class="track"><div class="fill"></div></div></div>
+      <div class="gbar struggle"><div class="lab">버튼 마구 눌러 탈출! (대시=강하게)</div><div class="track"><div class="fill"></div></div></div>
       <div class="gbar grip"><div class="lab">붙잡는 중</div><div class="track"><div class="fill"></div></div></div>
     </div>
   </div>

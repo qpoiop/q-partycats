@@ -50,38 +50,44 @@ export class Actions {
     this.game.fx.streak(p, dir);
   }
 
-  slam(p) {
-    if (p.grabbedBy || p.knockdown > 0 || p.grabbing || !p.alive) return;
-    if (!p.onGround && !p.slamming) {
-      p.slamming = true;
-      const v = p.vel();
-      p.body.setLinvel(V(v.x * 0.3, -ABIL.slamDownVel, v.z * 0.3), true);
-    }
-  }
-
-  slamHit(p) {
-    const pos = p.pos();
-    this.game.fx.ring(pos, p.hex);
-    this.game.fx.dust(pos, 0xffffff, 30, 1.6);
-    this.game.fx.shake(1.0); this.game.fx.flash(0.28);
+  /** Punch (주먹치기) — the main attack: a quick forward jab that staggers. */
+  punch(p) {
+    if (p.grabbedBy || p.knockdown > 0 || !p.alive) return;
+    if (p.grabbing) { this.throw(p); return; }
+    if (p.punchCd > 0) return;
+    p.punchCd = ABIL.punchCd; p.punching = 0.2;   // drives the jab pose
+    const dir = p.faceVec(), me = p.pos();
+    let hit = false;
     for (const o of this.game.players) {
-      if (o === p || !o.alive || o.invuln > 0) continue;
+      if (o === p || !o.alive || o.invuln > 0 || o.grabbedBy) continue;
       const op = o.pos();
-      const dx = op.x - pos.x, dz = op.z - pos.z, d = Math.hypot(dx, dz);
-      if (d < ABIL.slamRadius) {
-        const nx = dx / (d || 1), nz = dz / (d || 1);
-        const pw = (1 - d / ABIL.slamRadius) * ABIL.slamKnockScale + ABIL.slamKnockBase;
-        const om = o.mass();
-        if (o.grabbedBy) this.releaseGrab(o.grabbedBy);
-        o.hit(nx * pw * om, ABIL.slamKnockLift * om, nz * pw * om,
-          { tumble: 1, axis: new THREE.Vector3(nz, 0.2, -nx) });
+      const dx = op.x - me.x, dz = op.z - me.z, d = Math.hypot(dx, dz);
+      if (d < ABIL.punchReach && d > 1e-3 && (dx * dir.x + dz * dir.z) / d > ABIL.punchArc) {
+        const nx = dx / d, nz = dz / d, om = o.mass();
+        o.hit(nx * ABIL.punchKnock * om, ABIL.punchLift * om, nz * ABIL.punchKnock * om,
+          { tumble: 0.9, axis: new THREE.Vector3(nz, 0.2, -nx) });
+        this.game.fx.dust(op, 0xffffff, 12, 0.9); hit = true;
       }
     }
+    this.game.fx.shake(hit ? 0.5 : 0.15); if (hit) this.game.fx.flash(0.15);
+  }
+
+  /** Slide (슬라이딩) = grab pressed in mid-air → a low tackle lunge. */
+  slide(p) {
+    if (p.dashTimer > 0) return;
+    let dir;
+    if (p.moveMag > 0.12) { dir = new THREE.Vector3(p.moveDir.x, 0, p.moveDir.y).normalize(); p.facing = Math.atan2(dir.x, dir.z); p.faceTarget = p.facing; }
+    else dir = p.faceVec();
+    p.body.setLinvel(V(dir.x * ABIL.slideVel, -1.5, dir.z * ABIL.slideVel), true);
+    p.dashTimer = ABIL.slideTime; p.dashAir = false; p.invuln = 0.3; p.sliding = ABIL.slideTime;
+    p.knockTimer = Math.max(p.knockTimer, ABIL.slideTime);
+    this.game.fx.streak(p, dir); this.game.fx.dust(p.pos(), p.hex, 10, 0.7);
   }
 
   grab(p) {
     if (p.grabbedBy || p.knockdown > 0 || !p.alive) return;
     if (p.grabbing) { this.throw(p); return; }
+    if (!p.onGround) { this.slide(p); return; }   // jump+grab → slide tackle
     if (p.grabCd > 0) return;
     const dir = p.faceVec(), me = p.pos();
     let best = null, bd = GRAB.radius;

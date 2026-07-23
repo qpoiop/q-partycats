@@ -27,7 +27,7 @@ export const ASSETS = {
    One radius R drives everything: spawns, decoration, and camera framing
    are all expressed as ratios of R so nothing is hand-tuned in isolation. */
 export const ARENA = {
-  radius: 17.0,          // platform radius — the single source of scale (bigger arena)
+  radius: 15.0,          // platform radius — the single source of scale
   rimHeight: -0.02,
   spawnFactor: 0.5,      // cats spawn at R*this (central, clearly visible)
   decorRingFactor: 0.97, // trees live on the rim ring (R*this) → play area stays clear
@@ -78,31 +78,46 @@ export const MOVE = {
   frictionDecel: 34,   // m/s^2 braking when no input on ground
   turnRateGround: 9,   // facing lerp rate — smooth, not whip-snappy
   turnRateAir: 5,
-  knockWindow: 0.34,   // s of no-steer after taking a hit (keeps knockback juicy)
-  airDrag: 0.9,        // slight horizontal drag while knocked (was 1.7 → felt floaty/hangy)
+  knockWindow: 0.6,    // longer no-steer after a hit → knocked cats fly (Party-Animals-y)
+  airDrag: 0.5,
   shove: 15,           // direct contact-shove — makes pressing feel like a push (decisive shoves come from dash)
 };
 
-// ---------- abilities (expressed as target velocities, intuitive) ----------
+/* ---------- abilities — Party-Animals-style move set ----------
+   Ground: move, jump, PUNCH (주먹치기, the main attack), grab→throw.
+   Air combos: jump+dash = flying kick (날라차기), jump+grab = slide (슬라이딩). */
 export const ABIL = {
-  jumpVel: 7.2,        // up velocity on jump
+  jumpVel: 7.6,
   jumpSquash: -0.35,
-  dashCd: 1.4,
+
+  // dash / flying kick
+  dashCd: 1.2,
   dashVel: 12.5,       // ground dash burst
-  dashAirVel: 12.0,
-  dashAirLift: 2.6,
-  dashInvuln: 0.45,
+  dashAirVel: 13.5,    // jump+dash = flying kick lunge
+  dashAirLift: 2.4,
+  dashInvuln: 0.4,
   dashTime: 0.4,       // active window (contact = strike)
-  dashStrikeGround: 3.0,   // gentle shove — one hit shouldn't mean instant death
-  dashStrikeAir: 5.0,      // flying-kick punch
-  dashStrikeAirLift: 3.0,  // small pop (was 5 → too floaty)
-  slamDownVel: 17,
-  slamRadius: 4.4,
-  slamKnockBase: 3.0,
-  slamKnockScale: 7,
-  slamKnockLift: 4.5,
-  throwVel: 7.5,
-  throwLift: 4.5,          // low arc (was 7 → floated too high)
+  dashStrikeGround: 8.0,
+  dashStrikeGroundLift: 2.5,
+  dashStrikeAir: 12.0,     // flying-kick punch — hits hard
+  dashStrikeAirLift: 4.5,
+
+  // punch (주먹치기) — quick jab, the bread-and-butter attack
+  punchCd: 0.45,
+  punchReach: 1.9,
+  punchArc: 0.45,      // dot threshold — must be roughly facing the target
+  punchKnock: 13,
+  punchLift: 3.5,
+  punchWindup: 0.12,   // brief anim before the hit lands
+
+  // slide (슬라이딩) = jump+grab → low tackle
+  slideVel: 12,
+  slideTime: 0.45,
+  slideStrike: 7.5,
+  slideLift: 3.0,
+
+  throwVel: 8.5,
+  throwLift: 4.5,
 };
 
 /* ---------- EDGE TEETER ----------
@@ -215,9 +230,5 @@ export const MATCH = {
   countOptions: [2, 3, 4],
   roundOptions: [1, 3, 5],
   roundEndDelay: 2.4,
-  // sudden death: after sdTime the safe zone shrinks over closeTime, shoving
-  // stragglers off the island → every round resolves (outermost falls first).
-  sdTime: 26,
-  closeTime: 10,
-  minSafe: 2.5,
+  maxRound: 45,   // hard time cap so a round always ends (no tacky shrinking map)
 };
