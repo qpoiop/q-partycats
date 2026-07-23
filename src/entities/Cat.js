@@ -31,6 +31,15 @@ export class Cat {
     if (this.walk) { this.walk.play(); this.walk.setEffectiveWeight(0); }
     if (this.sit) { this.sit.play(); this.sit.setEffectiveWeight(0); }
     this._bob = 0;
+
+    // bone refs for procedural motion (the model IS rigged — use it)
+    this.legs = []; this.head = null; this.tail = [];
+    inner.traverse(o => {
+      if (!o.isBone) return;
+      if (o.name.indexOf('fingers') === 0) this.legs.push(o);   // the 4 legs (root→paw)
+      else if (o.name === 'head1_019') this.head = o;
+    });
+    this._q = new THREE.Quaternion(); this._e = new THREE.Euler();
   }
 
   _tint(inner, hex) {
@@ -84,7 +93,7 @@ export class Cat {
     holder.position.z += 0.4;
   }
 
-  updateAnimation(dt, speed, onGround, grabbed) {
+  updateAnimation(dt, speed, onGround, grabbed, flail = 0) {
     this.mixer.update(dt);
     if (this.walk) {
       // cross-fade idle → walk by speed; airborne keeps a faint paddle
@@ -98,7 +107,22 @@ export class Cat {
         : 0.5;
     }
     if (this.sit) {
-      this.sit.setEffectiveWeight(onGround && speed < ANIM.idleSpeed && !grabbed ? 0.7 : 0);
+      this.sit.setEffectiveWeight(onGround && speed < ANIM.idleSpeed && !grabbed && flail < 0.05 ? 0.7 : 0);
+    }
+    // procedural limb flail on TOP of the clip pose (knocked / teetering /
+    // grabbed) — the rigged legs kick and the head lolls, so it's not a rigid
+    // spinning blob. Applied after mixer.update so it layers over the clip.
+    if (flail > 0.02 && this.legs.length) {
+      const t = performance.now() * 0.001;
+      for (let i = 0; i < this.legs.length; i++) {
+        const ph = i * 1.9;
+        this._e.set(Math.sin(t * 17 + ph) * 1.2 * flail, Math.sin(t * 11 + ph) * 0.5 * flail, Math.cos(t * 14 + ph) * 0.9 * flail);
+        this.legs[i].quaternion.multiply(this._q.setFromEuler(this._e));
+      }
+      if (this.head) {
+        this._e.set(Math.sin(t * 10) * 0.5 * flail, Math.sin(t * 8) * 0.5 * flail, 0);
+        this.head.quaternion.multiply(this._q.setFromEuler(this._e));
+      }
     }
   }
 }

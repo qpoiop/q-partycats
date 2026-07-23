@@ -363,7 +363,8 @@ export class Player {
     this.tilt.scale.set(sx, sy, sx);
 
     const sp = Math.hypot(v.x, v.z);
-    this.cat.updateAnimation(dt, sp, this.onGround, !!this.grabbedBy);
+    const flail = this.teeter > 0 ? 1 : this.knockdown > 0 ? 0.85 : this.tumble > 0 ? this.tumble : this.grabbedBy ? 0.7 : 0;
+    this.cat.updateAnimation(dt, sp, this.onGround, !!this.grabbedBy, flail);
     // fallback stand-in has no clips → give it a little walk bob for life
     if (this.cat.fallback && this.tumble <= 0) {
       this.cat._bob += dt * (2 + sp * 2);
