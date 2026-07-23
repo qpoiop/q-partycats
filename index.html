@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>파티캣츠 · PARTY CATS</title>
+<meta name="description" content="밀치고 · 던지고 · 떨어뜨려라 — 설치 없이 즉시 플레이하는 최대 4인 실시간 3D 물리 파티 배틀.">
+
+<!-- icons / PWA -->
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="app-icon.png">
+<link rel="manifest" href="site.webmanifest">
+<meta name="theme-color" content="#0a0812">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="파티캣츠">
+
+<!-- Open Graph / Twitter 공유 카드 (og-share.png) -->
+<!-- 공유 크롤러(특히 카카오톡/트위터)는 절대 URL을 요구합니다.
+     배포 도메인이 정해지면 아래 og:url / og:image / twitter:image 를 절대 경로로 바꾸세요. -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="PARTY CATS">
+<meta property="og:title" content="파티캣츠 · PARTY CATS">
+<meta property="og:description" content="밀치고 · 던지고 · 떨어뜨려라. 최대 4인 실시간 3D 물리 파티 배틀 — 설치 없이 브라우저에서 바로.">
+<meta property="og:image" content="og-share.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="./">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="파티캣츠 · PARTY CATS">
+<meta name="twitter:description" content="밀치고 · 던지고 · 떨어뜨려라. 최대 4인 3D 물리 파티 배틀.">
+<meta name="twitter:image" content="og-share.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bagel+Fat+One&family=Bungee&family=Fredoka:wght@400;500;600;700&family=Paytone+One&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --p1:#f26a72; --p2:#5aa6ee; --p3:#4ad39a; --p4:#f5c24f;
+    --gold:#ffd88a; --gold-deep:#e0b25e;
+    --glass:rgba(28,26,48,.46); --glass-brd:rgba(255,255,255,.16);
+    --ink:#0f0c1c;
+  }
+  *{ margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{ width:100%; height:100%; overflow:hidden; background:#0a0812; font-family:'Fredoka',system-ui,sans-serif; color:#fff; }
+  #app{ position:fixed; inset:0; }
+  canvas#c{ position:fixed; inset:0; display:block; touch-action:none; }
+  .fill{ position:absolute; inset:0; }
+  .hide{ display:none !important; }
+  button{ font-family:inherit; }
+
+  /* screen fade */
+  .screen{ transition:opacity .5s ease, transform .5s cubic-bezier(.2,.8,.3,1); }
+  .screen.out{ opacity:0; pointer-events:none; transform:scale(1.04); }
+
+  /* glass + buttons */
+  .glass{ background:var(--glass); backdrop-filter:blur(22px) saturate(1.08); -webkit-backdrop-filter:blur(22px) saturate(1.08);
+     border:1px solid var(--glass-brd); box-shadow:0 30px 80px rgba(0,0,0,.5), 0 2px 8px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.1); }
+  .btn{ position:relative; font-weight:600; border:none; cursor:pointer; color:#fff; letter-spacing:.3px;
+     background:linear-gradient(176deg,#ff9a5a,#f0653a); padding:16px 40px; font-size:21px; border-radius:16px;
+     box-shadow:0 1px 0 rgba(255,255,255,.35) inset, 0 -3px 8px rgba(150,45,10,.35) inset, 0 10px 26px -6px rgba(255,110,55,.5), 0 3px 8px rgba(0,0,0,.25);
+     transition:transform .13s cubic-bezier(.3,.9,.4,1), box-shadow .13s, filter .13s; overflow:hidden; }
+  .btn:before{ content:''; position:absolute; inset:1px 1px auto 1px; height:42%; border-radius:15px 15px 40% 40%; background:linear-gradient(180deg,rgba(255,255,255,.32),transparent); }
+  .btn:hover{ filter:brightness(1.05); transform:translateY(-1px); }
+  .btn:active{ transform:translateY(2px); filter:brightness(.97); box-shadow:0 1px 0 rgba(255,255,255,.2) inset, 0 -2px 6px rgba(120,30,5,.4) inset, 0 4px 12px -4px rgba(190,65,25,.5), 0 1px 3px rgba(0,0,0,.3); }
+  .btn.sec{ background:linear-gradient(176deg,#928bf5,#6a54e0); box-shadow:0 1px 0 rgba(255,255,255,.3) inset, 0 -3px 8px rgba(50,32,130,.4) inset, 0 10px 26px -6px rgba(110,84,220,.5), 0 3px 8px rgba(0,0,0,.25); }
+  .btn.sec:active{ box-shadow:0 1px 0 rgba(255,255,255,.16) inset, 0 -2px 6px rgba(40,25,110,.45) inset, 0 4px 12px -4px rgba(70,52,168,.45), 0 1px 3px rgba(0,0,0,.3); }
+  .btn.mini{ font-size:16px; padding:11px 22px; border-radius:13px; }
+
+  .kicker{ font-family:'Fredoka'; font-weight:600; letter-spacing:7px; font-size:14px; text-transform:uppercase;
+     color:var(--gold); text-shadow:0 1px 8px rgba(0,0,0,.5); opacity:.92; }
+
+  /* brand logo image (logo.png) — shown only once it loads, else the CSS wordmark stays */
+  .brandImg{ display:none; }
+  #home .logo .brandImg{ width:min(560px,86vw); height:auto;
+     filter:drop-shadow(0 6px 0 rgba(74,47,54,.4)) drop-shadow(0 16px 30px rgba(0,0,0,.35)); }
+  #home .logo.has-img .brandImg{ display:block; }
+  #home .logo.has-img .w{ display:none; }
+  #loader .lg .brandImg{ width:min(360px,64vw); height:auto; }
+  #loader .lg.has-img{ -webkit-text-fill-color:initial; -webkit-text-stroke:0; background:none; filter:none; }
+  #loader .lg.has-img .brandImg{ display:block; }
+  #loader .lg.has-img .lgtxt{ display:none; }
+
+  /* ---------- HOME ---------- */
+  #home{ display:flex; flex-direction:column; align-items:center; justify-content:center;
+     background:radial-gradient(150% 120% at 50% 128%, rgba(255,201,145,.20), rgba(255,180,120,.04) 46%, rgba(14,10,24,0) 66%);
+     text-align:center; padding:24px; }
+  #home:before{ content:''; position:absolute; inset:0; background:linear-gradient(180deg, rgba(10,7,20,.22) 0%, transparent 34%, transparent 68%, rgba(10,7,20,.4) 100%); pointer-events:none; }
+  #home .brand{ position:relative; z-index:2; }
+  #home .logo{ position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0;
+     font-family:'Bagel Fat One',system-ui; font-size:clamp(70px,15.5vw,166px); line-height:.82; letter-spacing:.005em;
+     animation:logoWobble 5s ease-in-out infinite; }
+  #home .logo .w{ position:relative; display:inline-block;
+     color:#fff;
+     background:linear-gradient(178deg,#fffdf8 8%,#fff2d2 44%,#ffe0a6 82%,#ffc978 100%);
+     -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+     -webkit-text-stroke:5px #4a2f36; paint-order:stroke fill;
+     filter:
+       drop-shadow(0 4px 0 rgba(74,47,54,.5))
+       drop-shadow(0 12px 18px rgba(52,26,40,.4))
+       drop-shadow(0 26px 40px rgba(0,0,0,.32)); }
+  #home .logo .w.a{ transform:rotate(-3deg); }
+  #home .logo .w.b{ transform:rotate(2.5deg) translateY(-.08em); margin-left:.06em; }
+  @keyframes logoWobble{ 0%,100%{ transform:rotate(-1deg) scale(1);} 50%{ transform:rotate(1deg) scale(1.015);} }
+  #home .sub{ display:flex; align-items:center; justify-content:center; gap:12px; margin-top:26px; flex-wrap:wrap;
+     font-weight:500; font-size:clamp(14px,3vw,19px); color:#fff6ea; text-shadow:0 2px 12px rgba(0,0,0,.55); }
+  #home .sub .ko{ font-family:'Fredoka'; font-weight:700; letter-spacing:1px; color:#ffe7bc; }
+  #home .sub .dv{ width:5px; height:5px; border-radius:50%; background:rgba(255,231,188,.55); }
+  #home .cta{ position:relative; z-index:2; margin-top:38px; display:flex; flex-direction:column; align-items:center; gap:14px; }
+  #home .play{ font-size:26px; padding:20px 56px; display:inline-flex; align-items:center; gap:14px; animation:bob 2s ease-in-out infinite; }
+  .tri{ width:0; height:0; border-left:18px solid #fff; border-top:12px solid transparent; border-bottom:12px solid transparent; filter:drop-shadow(0 2px 2px rgba(0,0,0,.3)); }
+  @keyframes bob{ 0%,100%{ transform:translateY(0) rotate(-.6deg);} 50%{ transform:translateY(-9px) rotate(.6deg);} }
+  #home .foot{ position:absolute; bottom:14px; width:100%; left:0; text-align:center; font-size:12px; color:#cfd6ff; opacity:.7; z-index:2; }
+
+  /* ---------- LOBBY ---------- */
+  #lobby{ display:flex; align-items:center; justify-content:center; }
+  #lobby .panel{ width:min(960px,95vw); max-height:94vh; overflow:auto; border-radius:30px; padding:24px clamp(14px,3vw,30px) 26px; }
+  .lb-head{ display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:6px; }
+  .lb-title{ font-family:'Paytone One'; font-size:clamp(24px,4.6vw,36px); }
+  .lb-sub{ font-size:13px; opacity:.75; margin-top:2px; }
+  .room{ text-align:right; display:flex; flex-direction:column; align-items:flex-end; gap:2px; }
+  .room .lab{ font-size:11px; letter-spacing:2px; opacity:.7; text-transform:uppercase; }
+  .room b{ font-family:'Paytone One'; letter-spacing:4px; font-size:26px; color:#ffd98a; display:block; }
+  .copyc{ margin-top:3px; font-size:11px; font-weight:700; letter-spacing:.5px; color:#ffe7bc; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.16); border-radius:8px; padding:3px 10px; cursor:pointer; transition:.16s; }
+  .copyc:hover{ background:rgba(255,255,255,.18); }
+  .slots{ display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-top:20px; }
+  @media(max-width:680px){ .slots{ grid-template-columns:repeat(2,1fr);} }
+  .slot{ position:relative; border-radius:22px; padding:14px 10px 16px; text-align:center; overflow:hidden;
+     background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1); transition:transform .25s, box-shadow .25s, border-color .25s; }
+  .slot.filled{ transform:translateY(0); }
+  .slot.you{ border-color:#ffd98a; box-shadow:0 0 0 3px rgba(255,217,138,.28), 0 16px 40px rgba(0,0,0,.35); }
+  .slot .glow{ position:absolute; inset:auto 0 0 0; height:60%; opacity:.5; filter:blur(24px); z-index:0; }
+  .slot .portrait{ position:relative; z-index:1; width:100%; aspect-ratio:1; border-radius:16px; margin-bottom:8px;
+     background:rgba(0,0,0,.18); object-fit:cover; }
+  .slot .empty-mark{ position:relative; z-index:1; width:100%; aspect-ratio:1; border-radius:16px; margin-bottom:8px;
+     display:flex; align-items:center; justify-content:center; color:rgba(255,255,255,.35); font-size:34px; font-weight:700;
+     background:repeating-linear-gradient(135deg,rgba(255,255,255,.04) 0 10px,rgba(255,255,255,.02) 10px 20px); }
+  .slot .who{ position:relative; z-index:1; font-weight:700; font-size:17px; }
+  .slot .tag{ position:relative; z-index:1; font-size:12px; opacity:.72; margin-top:1px; }
+  .slot .badge{ position:absolute; top:8px; left:8px; z-index:2; font-size:10px; letter-spacing:1px; font-weight:700;
+     padding:3px 8px; border-radius:8px; background:rgba(0,0,0,.4); }
+  .colorrow{ display:flex; align-items:center; gap:16px; margin-top:20px; padding:14px 16px; border-radius:18px; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.09); flex-wrap:wrap; }
+  .colorrow .lab{ font-size:12px; letter-spacing:1px; opacity:.8; font-weight:700; text-transform:uppercase; }
+  .colorpick{ display:flex; gap:12px; }
+  .colorpick .sw{ width:38px; height:38px; border-radius:50%; cursor:pointer; border:2px solid rgba(255,255,255,.35); transition:transform .16s, box-shadow .16s; box-shadow:0 4px 10px rgba(0,0,0,.3); }
+  .colorpick .sw:hover{ transform:translateY(-2px) scale(1.06); }
+  .colorpick .sw.on{ border-color:#fff; transform:scale(1.18); box-shadow:0 0 0 3px rgba(255,255,255,.25), 0 0 16px currentColor; }
+  .cfg{ display:flex; gap:24px; flex-wrap:wrap; margin-top:22px; align-items:flex-end; }
+  .cfg .lab{ font-size:12px; letter-spacing:1px; opacity:.7; margin-bottom:8px; font-weight:600; text-transform:uppercase; }
+  .pills{ display:flex; gap:8px; }
+  .pill{ background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12); color:#fff; font-weight:700;
+     padding:10px 18px; border-radius:14px; cursor:pointer; font-size:17px; transition:.18s; }
+  .pill.on{ background:linear-gradient(180deg,#f0d391,#dcb35e); color:#3a2a12; border-color:transparent; box-shadow:0 1px 0 rgba(255,255,255,.4) inset, 0 6px 16px -5px rgba(0,0,0,.5); }
+  .cfg .go{ margin-left:auto; display:flex; gap:12px; }
+  .hint2{ font-weight:500; font-size:11px; opacity:.6; letter-spacing:0; text-transform:none; }
+
+  #home .join{ display:flex; gap:9px; margin-top:16px; position:relative; z-index:2; }
+  #home .join input{ width:min(240px,52vw); font-family:'Fredoka'; font-weight:500; font-size:15px; letter-spacing:1px; text-transform:uppercase; color:#fff;
+     background:rgba(255,255,255,.08); border:1.5px solid rgba(255,255,255,.16); border-radius:14px; padding:11px 16px; outline:none; transition:.18s; }
+  #home .join input::placeholder{ color:rgba(255,255,255,.42); text-transform:none; letter-spacing:.5px; }
+  #home .join input:focus{ border-color:rgba(255,217,138,.7); background:rgba(255,255,255,.12); }
+
+  /* ---------- HUD ---------- */
+  #hud{ pointer-events:none; }
+  #hud .top{ position:absolute; top:calc(env(safe-area-inset-top,0) + 12px); left:0; right:0; display:flex; justify-content:center; gap:9px; flex-wrap:wrap; padding:0 10px;}
+  .pcard{ position:relative; border-radius:16px; padding:7px 13px 7px 9px; display:flex; align-items:center; gap:9px; font-weight:600;
+     background:rgba(14,11,26,.5); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,.12); overflow:hidden; transition:opacity .4s, filter .4s, transform .4s;}
+  .pcard .bar{ position:absolute; left:0; top:0; bottom:0; width:5px; }
+  .pcard .nm{ padding-left:4px; }
+  .pcard .sc{ background:rgba(255,255,255,.14); border-radius:8px; padding:1px 9px; font-size:13px; font-weight:700; }
+  .pcard.dead{ opacity:.35; filter:grayscale(1); transform:scale(.94); }
+  .pcard.dead .nm{ text-decoration:line-through; }
+  #roundTag{ position:absolute; top:calc(env(safe-area-inset-top,0) + 60px); left:50%; transform:translateX(-50%);
+     font-family:'Paytone One'; font-size:19px; letter-spacing:1px; text-shadow:0 3px 10px rgba(0,0,0,.5);}
+
+  #stickZone{ position:absolute; left:0; bottom:0; width:48%; height:64%; pointer-events:auto; }
+  #stick{ position:absolute; width:132px; height:132px; border-radius:50%; display:none;
+     background:radial-gradient(circle at 50% 35%,rgba(255,255,255,.16),rgba(255,255,255,.05)); border:2px solid rgba(255,255,255,.35); box-shadow:0 8px 30px rgba(0,0,0,.4);}
+  #stick .knob{ position:absolute; left:50%; top:50%; width:62px; height:62px; margin:-31px; border-radius:50%;
+     background:radial-gradient(circle at 50% 35%,#fff,#d7dcff); box-shadow:0 6px 16px rgba(0,0,0,.45);}
+  #btns{ position:absolute; right:calc(env(safe-area-inset-right,0) + 18px); bottom:calc(env(safe-area-inset-bottom,0) + 24px); width:226px; height:226px; pointer-events:none;}
+  .abtn{ position:absolute; width:80px; height:80px; border-radius:50%; pointer-events:auto; color:#fff; font-weight:600; font-size:15px;
+     border:none; display:flex; flex-direction:column; align-items:center; justify-content:center; line-height:1; overflow:hidden;
+     box-shadow:0 1px 0 rgba(255,255,255,.3) inset, 0 -4px 10px rgba(0,0,0,.28) inset, 0 8px 18px -5px rgba(0,0,0,.55);
+     transition:transform .09s cubic-bezier(.3,.9,.4,1), box-shadow .09s, filter .09s;}
+  .abtn:before{ content:''; position:absolute; inset:2px 2px auto 2px; height:42%; border-radius:50%; background:linear-gradient(180deg,rgba(255,255,255,.35),transparent); }
+  .abtn small{ font-size:10px; opacity:.82; font-weight:500; margin-top:3px; position:relative;}
+  .abtn span{ position:relative; }
+  .abtn:active{ transform:translateY(3px) scale(.97); filter:brightness(.96); box-shadow:0 1px 0 rgba(255,255,255,.2) inset, 0 -2px 6px rgba(0,0,0,.28) inset, 0 3px 8px -3px rgba(0,0,0,.5);}
+  .abtn.jump{ right:74px; bottom:100px; width:94px; height:94px; background:linear-gradient(176deg,#48d494,#22a86c);}
+  .abtn.dash{ right:0; bottom:42px; background:linear-gradient(176deg,#ef8555,#d9552b);}
+  .abtn.slam{ right:124px; bottom:16px; background:linear-gradient(176deg,#8072e6,#5a46bd);}
+  .abtn.grab{ right:12px; bottom:136px; background:linear-gradient(176deg,#e8c064,#c99a2c); color:#40300e;}
+  .abtn.cool{ position:absolute; inset:0; background:rgba(0,0,0,.55); transform-origin:bottom; transition:transform .05s linear; }
+  #camHint{ position:absolute; right:14px; top:50%; opacity:.4; font-size:11px; writing-mode:vertical-rl; letter-spacing:2px;}
+  #kbHint{ position:absolute; left:50%; bottom:14px; transform:translateX(-50%); opacity:.7; font-size:12.5px;
+     background:rgba(0,0,0,.35); backdrop-filter:blur(6px); padding:7px 16px; border-radius:12px; text-align:center; pointer-events:none;}
+
+  /* overlays */
+  #vig{ position:absolute; inset:0; pointer-events:none; box-shadow:inset 0 0 200px 40px rgba(0,0,0,.45); z-index:3; }
+  #flash{ position:absolute; inset:0; background:#fff; opacity:0; pointer-events:none; mix-blend-mode:screen; z-index:4;}
+  #wipe{ position:absolute; inset:0; pointer-events:none; z-index:20; background:linear-gradient(120deg,#e2703f,#5744bf); clip-path:inset(0 100% 0 0); }
+  #banner{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none; z-index:6; }
+  #banner .txt{ font-family:'Paytone One'; font-size:clamp(42px,12vw,120px); text-align:center; padding:0 20px; text-wrap:balance;
+     text-shadow:0 2px 2px rgba(0,0,0,.4), 0 14px 40px rgba(0,0,0,.6); opacity:0; }
+  #countdown{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none; z-index:6;}
+  #countdown .n{ font-family:'Paytone One'; font-size:min(30vh,320px); color:#fff; text-shadow:0 3px 3px rgba(0,0,0,.4), 0 0 70px rgba(240,200,130,.55);}
+
+  /* results */
+  #results{ display:flex; align-items:center; justify-content:center; background:radial-gradient(120% 90% at 50% 120%, transparent, rgba(8,6,16,.55)); }
+  #results .panel{ width:min(640px,92vw); text-align:center; border-radius:30px; padding:30px 24px 26px; position:relative; overflow:hidden; }
+  #results .crown{ font-family:'Paytone One'; font-size:clamp(30px,7vw,52px); }
+  #results .champ{ font-family:'Paytone One'; font-size:clamp(40px,10vw,74px); margin-top:2px; line-height:1; }
+  #results .rank{ margin:22px 0; display:flex; flex-direction:column; gap:10px; }
+  .rrow{ display:flex; align-items:center; gap:14px; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.1); border-radius:16px; padding:11px 16px; font-size:20px; font-weight:600;}
+  .rrow .rk{ width:34px; height:34px; border-radius:11px; display:flex; align-items:center; justify-content:center; font-family:'Paytone One'; font-size:18px; color:#2a1e08;}
+  .rrow .dot{ width:16px; height:16px; border-radius:50%; box-shadow:0 0 10px currentColor; }
+  .rrow .sc{ margin-left:auto; font-family:'Paytone One'; font-size:24px; color:#ffd98a;}
+  #results .go{ display:flex; gap:12px; justify-content:center; }
+
+  /* loader */
+  #loader{ position:absolute; inset:0; background:radial-gradient(135% 125% at 50% 8%, #35285c 0%, #1d1740 46%, #0b0818 100%); display:flex; align-items:center; justify-content:center; flex-direction:column; gap:28px; z-index:50; transition:opacity .6s; overflow:hidden; }
+  #loadFx{ position:absolute; inset:0; width:100%; height:100%; z-index:0; }
+  #loader .lg{ position:relative; font-family:'Bagel Fat One',system-ui; font-size:clamp(44px,11vw,84px); line-height:.9; letter-spacing:.01em;
+     background:linear-gradient(178deg,#fffdf8 8%,#fff2d2 46%,#ffe0a6 82%,#ffc978 100%); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+     -webkit-text-stroke:5px #4a2f36; paint-order:stroke fill;
+     filter:drop-shadow(0 4px 0 rgba(74,47,54,.5)) drop-shadow(0 14px 24px rgba(0,0,0,.4)); transform:rotate(-2deg); animation:logoWobble 5s ease-in-out infinite; }
+  #loader .en{ position:relative; font-family:'Fredoka'; font-weight:700; letter-spacing:5px; font-size:14px; color:#ffe7bc; opacity:.9; margin-top:12px; }
+  #loader .dots{ position:relative; display:flex; gap:13px; }
+  #loader .dots i{ width:15px; height:15px; border-radius:50%; background:linear-gradient(180deg,#ffe4a8,#ff9d5c);
+     box-shadow:0 3px 8px rgba(0,0,0,.35), 0 0 14px rgba(255,190,120,.6); animation:loadBounce 1s ease-in-out infinite; }
+  #loader .dots i:nth-child(2){ animation-delay:.15s; background:linear-gradient(180deg,#bfe0ff,#5aa6ee); box-shadow:0 3px 8px rgba(0,0,0,.35), 0 0 14px rgba(90,166,238,.6);}
+  #loader .dots i:nth-child(3){ animation-delay:.3s; background:linear-gradient(180deg,#c4f5db,#4ad39a); box-shadow:0 3px 8px rgba(0,0,0,.35), 0 0 14px rgba(74,211,154,.6);}
+  @keyframes loadBounce{ 0%,60%,100%{ transform:translateY(0); } 30%{ transform:translateY(-16px); } }
+  #loader .track{ position:relative; width:min(320px,70vw); height:16px; border-radius:99px; background:rgba(255,255,255,.09); box-shadow:inset 0 2px 6px rgba(0,0,0,.45), 0 1px 0 rgba(255,255,255,.08); padding:3px; }
+  #loader .fill2{ position:relative; height:100%; width:8%; border-radius:99px; background:linear-gradient(90deg,#ff8a4c,#ffcf6b 70%,#ffe9b8); transition:width .5s cubic-bezier(.4,.9,.3,1); box-shadow:0 0 16px rgba(255,190,110,.8); overflow:hidden; }
+  #loader .fill2:after{ content:''; position:absolute; inset:0 0 auto 0; height:50%; border-radius:99px; background:linear-gradient(180deg,rgba(255,255,255,.6),transparent); }
+  #loader .txt{ position:relative; font-family:'Fredoka'; font-weight:500; font-size:13.5px; color:#d9cdf0; letter-spacing:.5px; }
+
+  /* ---------- RESPONSIVE / ORIENTATION ---------- */
+  @media (pointer:coarse){ #kbHint{ display:none; } }
+  @media (hover:none){ .btn:hover{ filter:none; transform:none; } }
+
+  @media (orientation:portrait) and (max-width:820px){
+    #stickZone{ width:55%; height:52%; }
+    #btns{ right:calc(env(safe-area-inset-right,0) + 14px); bottom:calc(env(safe-area-inset-bottom,0) + 30px); width:210px; height:210px; }
+    .abtn{ width:76px; height:76px; font-size:14px; }
+    .abtn.jump{ width:88px; height:88px; }
+    #home .foot{ font-size:11px; padding:0 16px; }
+    #lobby .panel{ padding:20px 14px 22px; }
+    .lb-head{ justify-content:center; text-align:center; }
+    .room{ align-items:center; text-align:center; }
+    .cfg{ gap:18px; }
+    .cfg .go{ margin-left:0; width:100%; justify-content:center; }
+  }
+
+  @media (orientation:landscape) and (max-height:560px){
+    #home{ padding:12px 20px; }
+    #home .logo{ font-size:clamp(52px,12vh,104px); }
+    #home .kicker{ font-size:12px; letter-spacing:5px; }
+    #home .sub{ margin-top:12px; font-size:14px; }
+    #home .cta{ margin-top:18px; flex-direction:row; gap:12px; flex-wrap:wrap; justify-content:center; }
+    #home .play{ font-size:20px; padding:14px 34px; }
+    #home .join{ margin-top:12px; }
+    #home .foot{ font-size:10px; bottom:8px; }
+    #lobby .panel{ max-height:96vh; padding:16px 18px 18px; }
+    .slots{ margin-top:12px; gap:10px; }
+    .slot .portrait,.slot .empty-mark{ margin-bottom:5px; }
+    .colorrow{ margin-top:12px; padding:10px 14px; }
+    .cfg{ margin-top:14px; }
+    #stickZone{ width:40%; height:70%; }
+    #btns{ width:196px; height:196px; bottom:calc(env(safe-area-inset-bottom,0) + 14px); }
+    .abtn{ width:66px; height:66px; font-size:13px; }
+    .abtn.jump{ width:74px; height:74px; right:66px; bottom:82px; }
+    .abtn.dash{ bottom:34px; }
+    .abtn.slam{ right:104px; bottom:12px; }
+    .abtn.grab{ right:10px; bottom:112px; }
+    #kbHint{ font-size:11px; padding:5px 12px; }
+  }
+
+  @media (orientation:portrait) and (max-width:400px){
+    #btns{ width:190px; height:190px; }
+    .abtn{ width:70px; height:70px; }
+    .abtn.jump{ width:80px; height:80px; }
+    .colorpick .sw{ width:34px; height:34px; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <canvas id="c"></canvas>
+  <div id="vig"></div>
+
+  <!-- HOME -->
+  <div id="home" class="fill screen">
+    <div class="brand">
+      <div class="kicker">최대 4인 · PARTY BATTLE</div>
+      <div class="logo"><img class="brandImg" src="logo.png" alt="PARTY CATS" onload="this.parentNode.classList.add('has-img')"><span class="w a">PARTY</span><span class="w b">CATS</span></div>
+      <div class="sub"><span class="ko">파티캣츠</span><span class="dv"></span><span>밀치고 · 던지고 · 떨어뜨려라</span></div>
+    </div>
+    <div class="cta">
+      <button class="btn play" id="goPlay"><span class="tri"></span>게임 시작</button>
+      <button class="btn sec mini" id="goHow">조작법 보기</button>
+    </div>
+    <div class="join">
+      <input id="joinInput" maxlength="7" placeholder="방 코드 입력 (예: CAT-042)" autocomplete="off">
+      <button class="btn sec mini" id="joinBtn">코드로 입장</button>
+    </div>
+    <div class="foot">방을 만들면 친구가 코드로 입장할 수 있어요 · 빈 자리는 봇이 자동으로 채웁니다</div>
+  </div>
+
+  <!-- LOBBY -->
+  <div id="lobby" class="fill screen hide">
+    <div class="panel glass">
+      <div class="lb-head">
+        <div><div class="lb-title">대기실</div><div class="lb-sub">내 색을 고르고, 방 인원과 라운드를 정한 뒤 시작하세요</div></div>
+        <div class="room"><div class="lab">Room Code</div><b id="roomCode">CAT-042</b><button class="copyc" id="copyCode">복사</button></div>
+      </div>
+      <div class="slots" id="slots"></div>
+      <div class="colorrow">
+        <div class="lab">내 색 선택</div>
+        <div class="colorpick" id="colorPick"></div>
+      </div>
+      <div class="cfg">
+        <div><div class="lab">방 인원 <span class="hint2">(빈 자리는 봇이 자동 참가)</span></div><div class="pills" id="countPills"></div></div>
+        <div><div class="lab">라운드</div><div class="pills" id="roundPills"></div></div>
+        <div class="go">
+          <button class="btn sec mini" id="backHome">뒤로</button>
+          <button class="btn mini" id="startGame" style="font-size:19px;">시작!</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HUD -->
+  <div id="hud" class="fill screen hide">
+    <div class="top" id="playerCards"></div>
+    <div id="roundTag"></div>
+    <div id="stickZone"><div id="stick"><div class="knob"></div></div></div>
+    <div id="btns">
+      <button class="abtn jump" data-act="jump"><span>점프</span><small>SPACE</small><div class="cool" data-cool="jump" style="transform:scaleY(0)"></div></button>
+      <button class="abtn dash" data-act="dash"><span>대시</span><small>SHIFT</small><div class="cool" data-cool="dash" style="transform:scaleY(0)"></div></button>
+      <button class="abtn slam" data-act="slam"><span>슬램</span><small>Q</small><div class="cool" data-cool="slam" style="transform:scaleY(0)"></div></button>
+      <button class="abtn grab" data-act="grab"><span>잡기</span><small>E</small><div class="cool" data-cool="grab" style="transform:scaleY(0)"></div></button>
+    </div>
+    <div id="camHint">DRAG TO ROTATE</div>
+    <div id="kbHint">WASD 이동 · SPACE 점프 · SHIFT 대시/구르기 · Q 슬램 · E 잡기/던지기 · 마우스 드래그 시점</div>
+  </div>
+
+  <!-- overlays -->
+  <div id="flash" class="fill"></div>
+  <div id="wipe" class="fill"></div>
+  <div id="countdown" class="fill hide"><div class="n"></div></div>
+  <div id="banner" class="fill"><div class="txt"></div></div>
+
+  <!-- RESULTS -->
+  <div id="results" class="fill screen hide">
+    <div class="panel glass">
+      <div class="crown">CHAMPION</div>
+      <div class="champ" id="champName">—</div>
+      <div class="rank" id="rankList"></div>
+      <div class="go">
+        <button class="btn sec mini" id="resHome">홈으로</button>
+        <button class="btn mini" id="resAgain" style="font-size:19px;">다시 하기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOADER -->
+  <div id="loader">
+    <canvas id="loadFx"></canvas>
+    <div style="text-align:center;position:relative"><div class="lg"><img class="brandImg" src="logo.png" alt="PARTY CATS" onload="this.parentNode.classList.add('has-img')"><span class="lgtxt">PARTY CATS</span></div><div class="en">파티캣츠</div></div>
+    <div class="dots"><i></i><i></i><i></i></div>
+    <div class="track"><div class="fill2" id="loadFill"></div></div>
+    <div class="txt" id="loadTxt">엔진 준비 중…</div>
+  </div>
+</div>
+
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>

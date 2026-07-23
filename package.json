@@ -1,0 +1,19 @@
+{
+  "name": "partycats",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "PARTY CATS — 최대 4인 실시간 3D 물리 파티 배틀 (Three.js + Rapier)",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@dimforge/rapier3d-compat": "0.12.0",
+    "three": "0.160.0"
+  },
+  "devDependencies": {
+    "vite": "^5.4.0"
+  }
+}

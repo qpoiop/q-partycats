@@ -1,0 +1,17 @@
+{
+  "name": "파티캣츠 · PARTY CATS",
+  "short_name": "파티캣츠",
+  "description": "밀치고 · 던지고 · 떨어뜨려라 — 최대 4인 실시간 3D 물리 파티 배틀.",
+  "lang": "ko",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#0a0812",
+  "theme_color": "#0a0812",
+  "icons": [
+    { "src": "app-icon.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "app-icon.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "favicon.png", "sizes": "any", "type": "image/png" }
+  ]
+}
