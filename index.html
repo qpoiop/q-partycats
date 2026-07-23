@@ -112,6 +112,7 @@
 
   /* ---------- LOBBY ---------- */
   #lobby{ display:flex; align-items:center; justify-content:center; }
+  #lobbyfx{ position:absolute; inset:0; pointer-events:none; z-index:2; }
   #lobby .panel{ width:min(960px,95vw); max-height:94vh; overflow:auto; border-radius:30px; padding:24px clamp(14px,3vw,30px) 26px; }
   .lb-head{ display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:6px; }
   .lb-title{ font-family:'Paytone One'; font-size:clamp(24px,4.6vw,36px); }
@@ -350,6 +351,7 @@
 
   <!-- LOBBY -->
   <div id="lobby" class="fill screen hide">
+    <canvas id="lobbyfx"></canvas>
     <div class="panel glass">
       <div class="lb-head">
         <div><div class="lb-title">대기실</div><div class="lb-sub">내 색을 고르고, 방 인원과 라운드를 정한 뒤 시작하세요</div></div>

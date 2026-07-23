@@ -1,0 +1,63 @@
+import * as THREE from 'three';
+import { Cat } from '../entities/Cat.js';
+
+/* ============================================================
+   LobbyView — live, animated character-select cats. Renders on a
+   dedicated transparent overlay canvas (so the glass panel doesn't
+   blur it), scissoring one idle-animating cat into each card's
+   portrait rect. One cat per team colour; a gentle turn + the
+   Sitting/Walking idle clip give it life.
+   ============================================================ */
+export class LobbyView {
+  constructor(canvas, proto, teams) {
+    this.renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+    this.renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    this.renderer.setClearColor(0x000000, 0);
+
+    this.scene = new THREE.Scene();
+    this.scene.add(new THREE.HemisphereLight(0xffffff, 0x445566, 1.15));
+    const d = new THREE.DirectionalLight(0xffffff, 2.1); d.position.set(2, 3, 3); this.scene.add(d);
+
+    this.cam = new THREE.PerspectiveCamera(30, 1, 0.1, 50);
+    this.cam.position.set(3.6, 2.35, 5.3); this.cam.lookAt(0, 1.45, 0);
+
+    this.cats = teams.map(t => {
+      const c = new Cat(proto, t.hex);
+      c.model.visible = false;
+      this.scene.add(c.model);
+      if (c.walk) { c.walk.play(); c.walk.setEffectiveWeight(0.22); c.walk.timeScale = 0.55; }
+      if (c.sit) { c.sit.play(); c.sit.setEffectiveWeight(0.65); }
+      return c;
+    });
+    this._clock = new THREE.Clock();
+  }
+
+  /** cards: [{ el: portraitElement, colorIndex }] for the visible slots. */
+  render(cards) {
+    if (!cards || !cards.length) return;
+    const dt = Math.min(0.05, this._clock.getDelta());
+    const r = this.renderer;
+    const w = innerWidth, h = innerHeight;
+    if (r.domElement.clientWidth !== w || r.domElement.clientHeight !== h) r.setSize(w, h, true);
+    for (const c of this.cats) c.updateAnimation(dt, 0.2, true, false);
+
+    r.clear();
+    r.setScissorTest(true);
+    const tt = performance.now() * 0.001;
+    for (const card of cards) {
+      const rect = card.el.getBoundingClientRect();
+      if (rect.width < 6 || rect.height < 6) continue;
+      const x = rect.left, y = h - rect.bottom, vw = rect.width, vh = rect.height;
+      this.cam.aspect = vw / vh; this.cam.updateProjectionMatrix();
+      for (const c of this.cats) c.model.visible = false;
+      const cat = this.cats[card.colorIndex] || this.cats[0];
+      cat.model.visible = true;
+      cat.model.rotation.y = 0.4 + Math.sin(tt * 0.6 + card.colorIndex) * 0.3;   // gentle idle turn
+      r.setViewport(x, y, vw, vh);
+      r.setScissor(x, y, vw, vh);
+      r.render(this.scene, this.cam);
+    }
+    r.setScissorTest(false);
+    for (const c of this.cats) c.model.visible = false;
+  }
+}

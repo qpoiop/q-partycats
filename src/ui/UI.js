@@ -71,11 +71,12 @@ export class UI {
       const slot = document.createElement('div');
       slot.className = 'slot filled' + (isYou ? ' you' : '');
       slot.innerHTML = `<div class="badge">P${i + 1}</div><div class="glow" style="background:${t.css}"></div>
-        <img class="portrait" src="${g.thumbs[ti] || ''}" alt="">
+        <div class="portrait"></div>
         <div class="who">${isYou ? '나' : BOT_NAMES[(i * 2) % BOT_NAMES.length]}</div>
         <div class="tag">${isYou ? '플레이어' : '봇 (자동 참가)'}</div>`;
       slots.appendChild(slot);
     }
+    this._lobbyCards = [...slots.querySelectorAll('.portrait')].map((el, i) => ({ el, colorIndex: order[i] }));
     const cw = $('#colorPick');
     cw.innerHTML = TEAMS.map((tt, ci) => `<button class="sw ${ci === g.humanColor ? 'on' : ''}" data-c="${ci}" style="background:${tt.css};color:${tt.css}" aria-label="${tt.name}"></button>`).join('');
     cw.querySelectorAll('.sw').forEach(s => s.addEventListener('click', () => { g.humanColor = +s.dataset.c; this.renderLobby(); }));
@@ -94,11 +95,12 @@ export class UI {
       const el = document.createElement('div');
       el.className = 'slot filled' + (isYou ? ' you' : '');
       el.innerHTML = `<div class="badge">P${i + 1}</div><div class="glow" style="background:${t.css}"></div>
-        <img class="portrait" src="${g.thumbs[p ? p.color : i] || ''}" alt="">
+        <div class="portrait"></div>
         <div class="who">${p ? (isYou ? '나' : p.name) : '빈자리'}</div>
         <div class="tag">${p ? (p.host ? '방장' : (p.connected ? '플레이어' : '연결 끊김…')) : '봇 자동참가'}</div>`;
       slots.appendChild(el);
     }
+    this._lobbyCards = [...slots.querySelectorAll('.portrait')].map((el, i) => ({ el, colorIndex: (bySlot[i] ? bySlot[i].color : i) }));
     const myColor = me && bySlot[me.slot] ? bySlot[me.slot].color : 0;
     const cw = $('#colorPick');
     cw.innerHTML = TEAMS.map((tt, ci) => `<button class="sw ${ci === myColor ? 'on' : ''}" data-c="${ci}" style="background:${tt.css};color:${tt.css}"></button>`).join('');

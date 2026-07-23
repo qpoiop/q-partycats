@@ -333,6 +333,11 @@ export class Player {
       this.tilt.rotation.x += (THREE.MathUtils.clamp(lvz * 0.05, -0.4, 0.4) - this.tilt.rotation.x) * Math.min(1, dt * 6);
       this.tilt.rotation.z += (THREE.MathUtils.clamp(-lvx * 0.05, -0.4, 0.4) - this.tilt.rotation.z) * Math.min(1, dt * 6);
       this.tilt.rotation.y += (0 - this.tilt.rotation.y) * Math.min(1, dt * 6);
+      // pushing hard but not moving (grinding into someone) → strain-lean forward
+      if (this.moveMag > 0.5 && this.onGround) {
+        const blocked = Math.max(0, 1 - Math.hypot(v.x, v.z) / (MOVE.speed * 0.55));
+        this.tilt.rotation.x += 0.42 * blocked;   // strain-lean into the shove
+      }
       sy = 1 - this.squash; sx = 1 + this.squash * 0.5;
     }
     if (this.grabbedBy) {

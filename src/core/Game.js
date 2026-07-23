@@ -12,6 +12,7 @@ import { Match } from '../gameplay/Match.js';
 import { Input } from '../input/Input.js';
 import { UI } from '../ui/UI.js';
 import { renderPortraits } from '../ui/Portraits.js';
+import { LobbyView } from '../ui/LobbyView.js';
 import { initLoaderFx } from '../loader/LoaderFx.js';
 import { Net } from '../net/Net.js';
 import { Multiplayer } from '../net/Multiplayer.js';
@@ -72,6 +73,7 @@ export class Game {
 
     this.ui.setLoad(0.9, '초상화 렌더링…');
     this.thumbs = renderPortraits(this.engine.renderer, this.assets.get('cat'), this.teams);
+    this.lobbyView = new LobbyView(document.getElementById('lobbyfx'), this.assets.get('cat'), this.teams);
 
     // attract demo: fill the home screen with idle cats
     this.match.buildPlayers();
@@ -193,5 +195,6 @@ export class Game {
     this.ui.setDark(dark);
 
     this.engine.render();
+    if (this.state === 'lobby' && this.lobbyView) this.lobbyView.render(this.ui._lobbyCards);
   }
 }
