@@ -181,8 +181,11 @@ export class Player {
     const g = this.grabbedBy;
     if (!g || !g.alive) { this.grabbedBy = null; return; }
     const gp = g.pos();
-    const hx = gp.x + Math.sin(g.facing) * GRAB.holdDist;
-    const hz = gp.z + Math.cos(g.facing) * GRAB.holdDist;
+    // tug: the hold point pulses inward on the grabber's yank → victim jerks closer
+    const tug = Math.sin(performance.now() * 0.001 * GRAB.tugFreq) * 0.5 + 0.5;
+    const hd = GRAB.holdDist - tug * GRAB.tugHold;
+    const hx = gp.x + Math.sin(g.facing) * hd;
+    const hz = gp.z + Math.cos(g.facing) * hd;
     const hy = gp.y + GRAB.holdHeight;
     const p = this.pos(), v = this.vel(), m = this.mass();
     let ax = (hx - p.x) * GRAB.spring - v.x * GRAB.damp;
@@ -404,6 +407,7 @@ export class Player {
       punch: this.punching > 0 ? Math.min(1, this.punching / ABIL.punchTime) : 0,
       kick:  (this.dashAir && this.dashTimer > 0) ? Math.min(1, this.dashTimer / ABIL.dashTime) : 0,
       slide: this.sliding > 0 ? Math.min(1, this.sliding / ABIL.slideTime) : 0,
+      pull:  this.grabbing ? (Math.sin(performance.now() * 0.001 * GRAB.tugFreq) * 0.5 + 0.5) : 0,
     });
     // fallback stand-in has no clips → give it a little walk bob for life
     if (this.cat.fallback && this.tumble <= 0) {

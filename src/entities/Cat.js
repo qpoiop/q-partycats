@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
-import { BODY, ANIM, BONEMAP } from '../config.js';
+import { BODY, ANIM, BONEMAP, GRAB } from '../config.js';
 
 /* ============================================================
    Cat — one character's visual: a team-tinted clone of the cat
@@ -136,7 +136,7 @@ export class Cat {
   updateAnimation(dt, s) {
     const speed = s.speed || 0, onGround = !!s.onGround;
     const flail = s.flail || 0, rear = s.rear || 0;
-    const punch = s.punch || 0, kick = s.kick || 0, slide = s.slide || 0, cheer = s.cheer || 0;
+    const punch = s.punch || 0, kick = s.kick || 0, slide = s.slide || 0, cheer = s.cheer || 0, pull = s.pull || 0;
     const acting = punch + kick + slide + cheer;
 
     this.mixer.update(dt);
@@ -158,6 +158,8 @@ export class Cat {
 
     // rear up on hind legs (grab / struggle) — front paws lift like hands
     if (rear > 0.02) for (const leg of fl) this._rot(leg, -1.25 * rear + Math.sin(t * 12) * 0.25 * rear, 0, 0);
+    // grabber tug — yank the raised paws in on the pull beat (drags the victim)
+    if (pull > 0.02) for (const leg of fl) this._rot(leg, -pull * GRAB.tugArm, 0, 0);
 
     // PUNCH (주먹치기) — lead paw swings forward in the sagittal plane (no head
     // wobble, no wild twist — a clean straight jab)

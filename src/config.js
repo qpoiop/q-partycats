@@ -171,6 +171,12 @@ export const GRAB = {
   carrySpeedMul: 0.62,  // grabber slows while carrying
   victimSpeedMul: 0.0,  // victim can't self-propel (only struggle)
 
+  // rhythmic tug — grabber yanks the victim with its paws on a cadence, and the
+  // hold point pulses in so the held cat visibly jerks closer (the "pull" feel)
+  tugFreq: 5.0,         // pull cadence (rad/s)
+  tugArm: 0.55,         // extra front-paw yank amplitude on the grabber (the main "pull" read)
+  tugHold: 0.35,        // hold-point pulse (heavily-damped spring → only a slight victim jerk)
+
   gripMax: 1.0,
   gripDrainBase: 0.16,      // grip lost per second just holding
   gripDrainStruggle: 0.5,   // extra grip lost per second scaled by struggle
