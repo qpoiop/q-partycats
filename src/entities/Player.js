@@ -171,6 +171,9 @@ export class Player {
 
     if (this.dashTimer > 0) {
       if (Math.random() < 0.5) this.game.fx.dust(this.pos(), this.hex, 2, 0.4);
+      // trail: lay a fading speed-streak each frame along the motion → afterimage
+      const v = this.vel(), sp = Math.hypot(v.x, v.z);
+      if (sp > 3) this.game.fx.streak(this, { x: v.x / sp, z: v.z / sp });
       this._dashStrike();
     }
   }

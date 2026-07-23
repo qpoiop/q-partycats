@@ -61,12 +61,12 @@ export class Effects {
   }
 
   streak(p, dir) {
-    const m = new THREE.Mesh(new THREE.PlaneGeometry(0.25, 1.6),
-      new THREE.MeshBasicMaterial({ color: p.hex, transparent: true, opacity: 0.7, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }));
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(0.34, 2.0),
+      new THREE.MeshBasicMaterial({ color: p.hex, transparent: true, opacity: 0.5, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }));
     const pos = p.pos();
-    m.position.set(pos.x, pos.y - 0.1, pos.z);
-    m.lookAt(pos.x + dir.x, pos.y - 0.1, pos.z + dir.z); m.rotateY(Math.PI / 2);
-    this.group.add(m); this._streaks.push({ m, life: 0.25 });
+    m.position.set(pos.x, pos.y + 0.1, pos.z);
+    m.lookAt(pos.x + dir.x, pos.y + 0.1, pos.z + dir.z); m.rotateY(Math.PI / 2);
+    this.group.add(m); this._streaks.push({ m, life: 0.28 });
   }
 
   shake(a) { this.shakeAmt = Math.min(1.6, this.shakeAmt + a); }
@@ -101,8 +101,8 @@ export class Effects {
     // streaks
     for (let i = this._streaks.length - 1; i >= 0; i--) {
       const s = this._streaks[i]; s.life -= dt;
-      s.m.material.opacity = Math.max(0, s.life / 0.25) * 0.7;
-      s.m.scale.y = 1 + (0.25 - s.life) * 4;
+      s.m.material.opacity = Math.max(0, s.life / 0.28) * 0.5;
+      s.m.scale.y = 1 + (0.28 - s.life) * 3;
       if (s.life <= 0) { this.group.remove(s.m); this._streaks.splice(i, 1); }
     }
     if (this.shakeAmt > 0) this.shakeAmt = Math.max(0, this.shakeAmt - dt * 3);
