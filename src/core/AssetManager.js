@@ -72,6 +72,16 @@ export function makeFallbackCat() {
   return g;
 }
 
+export function makeFallbackWater() {
+  const g = new THREE.Group();
+  const plane = new THREE.Mesh(
+    new THREE.PlaneGeometry(10, 10, 1, 1),
+    new THREE.MeshStandardMaterial({ color: 0x2f7fb5, roughness: 0.3, metalness: 0.1 }));
+  plane.rotation.x = -Math.PI / 2;
+  g.add(plane);
+  return g;
+}
+
 export function makeFallbackHouse() {
   const g = new THREE.Group();
   const wall = new THREE.Mesh(new THREE.BoxGeometry(3, 2.4, 3),

@@ -2,10 +2,10 @@ import * as THREE from 'three';
 import { ARENA, RENDER } from '../config.js';
 
 /* ============================================================
-   Arena — a floating grassy sky-island above a dark abyss.
-   Platform + rim, a ring of low-poly trees, scattered bushes/
-   rocks/grass for richness, a backdrop cabin, ambient motes,
-   and the abyss geometry players plunge into when they fall off.
+   Arena — a floating grassy sky-island high above a vast animated
+   sea. Platform + rim, a ring of low-poly trees, scattered bushes/
+   rocks/grass, a backdrop cabin, ambient motes, and the ocean far
+   below that cats plunge into when they fall off.
 
    Swappable: a future gimmick map is another class exposing
    { group, update(dt) }.
@@ -17,9 +17,10 @@ export class Arena {
     scene.add(this.group);
     this.fx = new THREE.Group();
     scene.add(this.fx);
+    this._mixers = [];
 
     this._buildSky();
-    this._buildAbyss();
+    this._buildSeaBackdrop();
     this._buildPlatform();
     this._buildDecor();
     this._buildMotes();
@@ -46,26 +47,37 @@ export class Arena {
     this.group.add(sky);
   }
 
-  /* The void the island floats above: a deep dark shaft players fall
-     into, plus a dark cap so looking down reads as bottomless. */
-  _buildAbyss() {
-    const dark = new THREE.MeshBasicMaterial({ color: RENDER.abyssColor, side: THREE.DoubleSide, fog: false });
-    const wall = new THREE.Mesh(new THREE.CylinderGeometry(80, 44, 320, 48, 1, true), dark);
-    wall.position.y = -164; this.group.add(wall);
-    const floor = new THREE.Mesh(new THREE.CircleGeometry(80, 48), dark);
-    floor.rotation.x = -Math.PI / 2; floor.position.y = -322; this.group.add(floor);
+  /* Deep-water backdrop far below the island so the sea reads as solid
+     even through gaps; the animated surface is dropped in via addWater(). */
+  _buildSeaBackdrop() {
+    const deep = new THREE.Mesh(
+      new THREE.CircleGeometry(760, 64),
+      new THREE.MeshBasicMaterial({ color: 0x17527a }));
+    deep.rotation.x = -Math.PI / 2;
+    deep.position.y = ARENA.waterY - 3;
+    this.group.add(deep);
+  }
 
-    // faint drifting streaks in the shaft to sell the depth/speed of the fall
-    const N = 90;
-    const geo = new THREE.BufferGeometry();
-    const pos = new Float32Array(N * 3);
-    for (let i = 0; i < N; i++) {
-      const a = Math.random() * 6.28, r = 4 + Math.random() * 34;
-      pos[i * 3] = Math.cos(a) * r; pos[i * 3 + 1] = -8 - Math.random() * 260; pos[i * 3 + 2] = Math.sin(a) * r;
+  /* Place the animated water model as a huge sea covering the world,
+     far below the floating island. Plays its wave animation clips. */
+  addWater(gltf) {
+    const root = gltf.scene;
+    // normalise the tile's footprint, then blow it up to cover the world
+    const box = new THREE.Box3().setFromObject(root);
+    const size = box.getSize(new THREE.Vector3());
+    const foot = Math.max(size.x, size.z) || 1;
+    const target = 1500;                       // sea diameter
+    root.scale.setScalar(target / foot);
+    root.position.y = ARENA.waterY - box.min.y * (target / foot);
+    root.traverse(o => { if (o.isMesh) { o.receiveShadow = false; o.frustumCulled = false; } });
+    this.scene.add(root);
+
+    if (gltf.animations && gltf.animations.length) {
+      const mixer = new THREE.AnimationMixer(root);
+      gltf.animations.forEach(c => mixer.clipAction(c).play());
+      this._mixers.push(mixer);
     }
-    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-    const mat = new THREE.PointsMaterial({ color: 0x3a4a6b, size: 0.5, transparent: true, opacity: 0.5, depthWrite: false, fog: false });
-    const pts = new THREE.Points(geo, mat); pts.frustumCulled = false; this.group.add(pts);
+    this.water = root;
   }
 
   _buildPlatform() {
@@ -197,6 +209,7 @@ export class Arena {
   }
 
   update(dt) {
+    for (const m of this._mixers) m.update(dt);
     const N = this._moteN, pos = this._motePos, vel = this._moteVel;
     for (let i = 0; i < N; i++) {
       pos[i * 3 + 1] += vel[i] * dt;

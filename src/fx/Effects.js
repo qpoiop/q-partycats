@@ -51,6 +51,15 @@ export class Effects {
     this.group.add(m); this._rings.push({ m, life: 0.6 });
   }
 
+  /* water splash where a fallen cat hits the sea (at the given world pos) */
+  splash(pos) {
+    const m = new THREE.Mesh(new THREE.RingGeometry(0.5, 0.9, 44),
+      new THREE.MeshBasicMaterial({ color: 0xbfe9ff, transparent: true, opacity: 1, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending }));
+    m.rotation.x = -Math.PI / 2; m.position.set(pos.x, pos.y + 0.1, pos.z);
+    this.group.add(m); this._rings.push({ m, life: 0.6 });
+    this.dust(pos, 0x9fd6ff, 30, 2.6);
+  }
+
   streak(p, dir) {
     const m = new THREE.Mesh(new THREE.PlaneGeometry(0.25, 1.6),
       new THREE.MeshBasicMaterial({ color: p.hex, transparent: true, opacity: 0.7, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }));

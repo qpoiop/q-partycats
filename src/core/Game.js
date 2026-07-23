@@ -1,7 +1,7 @@
 import { TEAMS, ARENA, ABIL, MATCH } from '../config.js';
 import { Engine } from './Engine.js';
 import { GameLoop } from './GameLoop.js';
-import { AssetManager, makeFallbackCat, makeFallbackHouse } from './AssetManager.js';
+import { AssetManager, makeFallbackCat, makeFallbackHouse, makeFallbackWater } from './AssetManager.js';
 import { Physics } from '../physics/Physics.js';
 import { Arena } from '../world/Arena.js';
 import { Effects } from '../fx/Effects.js';
@@ -53,13 +53,16 @@ export class Game {
     this.arena = new Arena(this.scene);
 
     this.assets = new AssetManager((p, t) => this.ui.setLoad(p, t));
-    this.ui.setLoad(0.35, '고양이 불러오는 중…');
+    this.ui.setLoad(0.32, '고양이 불러오는 중…');
     await this.assets.loadModel('cat', makeFallbackCat);
-    this.ui.setLoad(0.65, '숲속 집 불러오는 중…');
+    this.ui.setLoad(0.55, '숲속 집 불러오는 중…');
     const house = await this.assets.loadModel('house', makeFallbackHouse);
     this.arena.addProp(house.scene);
+    this.ui.setLoad(0.74, '바다 불러오는 중…');
+    const water = await this.assets.loadModel('water', makeFallbackWater);
+    this.arena.addWater(water);
 
-    this.ui.setLoad(0.85, '초상화 렌더링…');
+    this.ui.setLoad(0.9, '초상화 렌더링…');
     this.thumbs = renderPortraits(this.engine.renderer, this.assets.get('cat'), this.teams);
 
     // attract demo: fill the home screen with idle cats

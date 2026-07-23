@@ -56,7 +56,7 @@ export class Player {
     this.invuln = 0; this.slamming = false; this.knockTimer = 0;
     this.grabbing = null; this.grabbedBy = null; this.grabTimer = 0; this.grabCd = 0; this.struggle = 0;
     this.tumble = 0; this.tumbleAxis = new THREE.Vector3(1, 0, 0); this.squash = 0;
-    this.falling = false;
+    this.falling = false; this._splashed = false;
     this.botTimer = 0; this.wanderA = Math.random() * 6.28;
   }
 
@@ -180,9 +180,13 @@ export class Player {
       // combat: doomed the instant we drop past the platform edge — round
       // resolves now, but the body keeps plunging into the abyss for drama.
       if (this.alive && t.y < A.doomY) { this.game.match.eliminate(this); }
-      if (!this.alive && this.falling && t.y < A.abyssY) {
-        this.body.setEnabled(false); this.group.visible = false; this.shadow.visible = false; this.falling = false;
-        return;
+      if (!this.alive && this.falling) {
+        if (!this._splashed && t.y < A.waterY) { this._splashed = true; this.game.fx.splash(t); }
+        if (t.y < A.hideY) {
+          this.body.setEnabled(false); this.group.visible = false; this.shadow.visible = false;
+          this.falling = false; this._splashed = false;
+          return;
+        }
       }
     }
 

@@ -20,6 +20,7 @@ export const BOT_NAMES = ['냥냥', '까칠', '치즈', '우당탕', '폭탄', '
 export const ASSETS = {
   cat:   'scene/low-poly_oldxian_comix_cat.glb',
   house: 'scene/forest_house.glb',
+  water: 'scene/water_animation.glb',
 };
 
 // ---------- arena ----------
@@ -28,7 +29,8 @@ export const ARENA = {
   rimHeight: -0.02,
   doomY: -2.5,       // below this while off-platform → out (round resolves now)
   menuKillY: -6,     // attract mode: respawn instead of KO
-  abyssY: -230,      // body is hidden here after the ~5s plunge into the abyss
+  waterY: -46,       // visible sea the island floats over; fall ~2s then splash
+  hideY: -55,        // body removed just under the surface after the splash
 };
 
 // ---------- character physical body ----------
