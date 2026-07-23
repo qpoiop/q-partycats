@@ -29,7 +29,7 @@ export class CameraRig {
   /** Camera-relative forward/right on the ground plane (reused vectors). */
   forwardRight() {
     const f = this._f; this.camera.getWorldDirection(f); f.y = 0; f.normalize();
-    this._r.set(f.z, 0, -f.x);
+    this._r.set(-f.z, 0, f.x);   // screen-right (was inverted → left/right reversed)
     return { f, r: this._r };
   }
 
