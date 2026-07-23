@@ -15,10 +15,12 @@ export class Engine {
   constructor(canvas) {
     this.canvas = canvas;
 
-    this.renderer = new THREE.WebGLRenderer({
-      canvas, antialias: true, alpha: true, preserveDrawingBuffer: true,
-    });
+    // Opaque canvas, no preserved buffer: any uncovered pixel clears to the
+    // sky/fog colour (never the black page → no smearing "torn brown frame").
+    // Portraits read from a RenderTarget, so preserveDrawingBuffer isn't needed.
+    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
     this.renderer.setPixelRatio(Math.min(devicePixelRatio, RENDER.pixelRatioCap));
+    this.renderer.setClearColor(RENDER.fogColor, 1);
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;

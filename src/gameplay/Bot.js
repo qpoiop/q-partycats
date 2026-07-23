@@ -1,4 +1,4 @@
-import { ARENA, ABIL } from '../config.js';
+import { ARENA, ABIL, GRAB } from '../config.js';
 
 const V = (x, y, z) => ({ x, y, z });
 
@@ -12,10 +12,22 @@ export class Bot {
   constructor(game) { this.game = game; }
 
   update(p, dt) {
-    if (!p.alive || p.grabbedBy) { p.moveMag = 0; return; }
+    if (!p.alive) { p.moveMag = 0; return; }
+    if (p.grabbedBy) { this._struggle(p, dt); return; }
     const st = this.game.state;
     if (st === 'home' || st === 'lobby' || st === 'results') return this._ambient(p, dt);
     this._combat(p, dt);
+  }
+
+  /* Grabbed: mash to build the escape meter, occasionally dash-burst free. */
+  _struggle(p, dt) {
+    p.moveMag = 0;
+    p.addStruggle(GRAB.struggleGainMash * dt * 9);
+    p._botKick = (p._botKick || 0) - dt;
+    if (p._botKick <= 0) {
+      p._botKick = 0.5 + Math.random() * 0.8;
+      if (p.dashCd <= 0 && Math.random() < 0.4) { p.addStruggle(GRAB.struggleGainDash); p.dashCd = ABIL.dashCd * 0.5; }
+    }
   }
 
   _ambient(p, dt) {

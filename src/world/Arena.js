@@ -44,37 +44,55 @@ export class Arena {
             gl_FragColor=vec4(c,1.0);} `,
       }),
     );
+    sky.frustumCulled = false;   // giant env sphere — never cull
     this.group.add(sky);
   }
 
-  /* Deep-water backdrop far below the island so the sea reads as solid
-     even through gaps; the animated surface is dropped in via addWater(). */
+  /* Sea backdrop + the underwater abyss the island floats above. A deep
+     disc reads the surface as solid; a dark cone below is the void that
+     fallen cats sink into. The animated surface is added via addWater(). */
   _buildSeaBackdrop() {
     const deep = new THREE.Mesh(
-      new THREE.CircleGeometry(760, 64),
-      new THREE.MeshBasicMaterial({ color: 0x17527a }));
+      new THREE.CircleGeometry(900, 64),
+      new THREE.MeshBasicMaterial({ color: 0x175074, fog: true }));
     deep.rotation.x = -Math.PI / 2;
-    deep.position.y = ARENA.waterY - 3;
+    deep.position.y = ARENA.waterY - 1.5;
+    deep.frustumCulled = false;
     this.group.add(deep);
+
+    // darkening abyss beneath the surface (cats sink into this)
+    const abyss = new THREE.Mesh(
+      new THREE.CylinderGeometry(70, 26, 120, 40, 1, true),
+      new THREE.MeshBasicMaterial({ color: 0x03060f, side: THREE.DoubleSide, fog: false }));
+    abyss.position.y = ARENA.waterY - 60;
+    abyss.frustumCulled = false;
+    this.group.add(abyss);
+    const abyssFloor = new THREE.Mesh(
+      new THREE.CircleGeometry(70, 40),
+      new THREE.MeshBasicMaterial({ color: 0x03060f, fog: false }));
+    abyssFloor.rotation.x = -Math.PI / 2; abyssFloor.position.y = ARENA.waterY - 120;
+    abyssFloor.frustumCulled = false;
+    this.group.add(abyssFloor);
   }
 
-  /* Place the animated water model as a huge sea covering the world,
-     far below the floating island. Plays its wave animation clips. */
+  /* Place the animated water model as a huge sea, centred at the surface
+     level. Centre it explicitly (no fragile min.y math) and play its waves. */
   addWater(gltf) {
     const root = gltf.scene;
-    // normalise the tile's footprint, then blow it up to cover the world
-    const box = new THREE.Box3().setFromObject(root);
+    let box = new THREE.Box3().setFromObject(root);
     const size = box.getSize(new THREE.Vector3());
     const foot = Math.max(size.x, size.z) || 1;
-    const target = 1500;                       // sea diameter
-    root.scale.setScalar(target / foot);
-    root.position.y = ARENA.waterY - box.min.y * (target / foot);
+    root.scale.setScalar(1600 / foot);          // sea diameter
+    root.updateWorldMatrix(true, true);
+    box = new THREE.Box3().setFromObject(root);
+    const c = box.getCenter(new THREE.Vector3());
+    root.position.set(-c.x, ARENA.waterY - c.y, -c.z);   // centre the surface at waterY
     root.traverse(o => { if (o.isMesh) { o.receiveShadow = false; o.frustumCulled = false; } });
     this.scene.add(root);
 
     if (gltf.animations && gltf.animations.length) {
       const mixer = new THREE.AnimationMixer(root);
-      gltf.animations.forEach(c => mixer.clipAction(c).play());
+      gltf.animations.forEach(cl => mixer.clipAction(cl).play());
       this._mixers.push(mixer);
     }
     this.water = root;
@@ -119,21 +137,27 @@ export class Arena {
 
   _buildDecor() {
     const R = ARENA.radius;
-    // ring of trees hugging the rim (scenery, non-colliding, out of the play area)
-    const treeCount = 9;
+    // Keep the central play/spawn zone clear: decoration lives in the outer
+    // annulus (outside the spawn ring), trees hug the rim ring.
+    const inner = R * ARENA.spawnFactor + 1.2;    // clear radius for spawns/play
+    const outer = R - 1.2;
+    const annulus = () => Math.sqrt(inner * inner + Math.random() * (outer * outer - inner * inner));
+
+    // trees on the rim ring — scenery, out of the play area
+    const treeR = R * ARENA.decorRingFactor;
+    const treeCount = 10;
     for (let i = 0; i < treeCount; i++) {
-      const a = (i / treeCount) * 6.28 + 0.2 + (Math.random() - 0.5) * 0.15;
-      const r = R - 0.9 - Math.random() * 0.6;
-      const t = this._tree(0.9 + Math.random() * 0.5);
-      t.position.set(Math.cos(a) * r, 0, Math.sin(a) * r);
+      const a = (i / treeCount) * 6.28 + (Math.random() - 0.5) * 0.18;
+      const t = this._tree(0.95 + Math.random() * 0.5);
+      t.position.set(Math.cos(a) * treeR, 0, Math.sin(a) * treeR);
       t.rotation.y = Math.random() * 6.28;
       this.group.add(t);
     }
 
-    // bushes scattered inside
+    // bushes in the annulus
     const bushMat = new THREE.MeshStandardMaterial({ color: 0x5aa84a, roughness: 1 });
-    for (let i = 0; i < 14; i++) {
-      const a = Math.random() * 6.28, r = Math.random() * (R - 2.5);
+    for (let i = 0; i < 12; i++) {
+      const a = Math.random() * 6.28, r = annulus();
       const s = 0.4 + Math.random() * 0.35;
       const b = new THREE.Mesh(new THREE.IcosahedronGeometry(s, 0), bushMat);
       b.position.set(Math.cos(a) * r, s * 0.55, Math.sin(a) * r);
@@ -141,10 +165,10 @@ export class Arena {
       this.group.add(b);
     }
 
-    // rocks
+    // rocks in the annulus
     const rockMat = new THREE.MeshStandardMaterial({ color: 0x8b8b93, roughness: 1 });
-    for (let i = 0; i < 7; i++) {
-      const a = Math.random() * 6.28, r = Math.random() * (R - 2);
+    for (let i = 0; i < 6; i++) {
+      const a = Math.random() * 6.28, r = annulus();
       const s = 0.35 + Math.random() * 0.5;
       const k = new THREE.Mesh(new THREE.DodecahedronGeometry(s, 0), rockMat);
       k.position.set(Math.cos(a) * r, s * 0.4, Math.sin(a) * r);

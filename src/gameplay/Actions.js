@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { ABIL, MOVE } from '../config.js';
+import { ABIL, MOVE, GRAB } from '../config.js';
 
 const V = (x, y, z) => ({ x, y, z });
 
@@ -84,7 +84,7 @@ export class Actions {
     if (p.grabbing) { this.throw(p); return; }
     if (p.grabCd > 0) return;
     const dir = p.faceVec(), me = p.pos();
-    let best = null, bd = ABIL.grabRadius;
+    let best = null, bd = GRAB.radius;
     for (const o of this.game.players) {
       if (o === p || !o.alive || o.invuln > 0 || o.grabbedBy) continue;
       const op = o.pos();
@@ -95,25 +95,39 @@ export class Actions {
       }
     }
     if (best) {
-      p.grabbing = best; best.grabbedBy = p; p.grabTimer = ABIL.grabHold; best.struggle = 0;
-      best.body.setBodyType(this.RBType.KinematicPositionBased, true);
+      // victim stays a DYNAMIC body — held by a spring (Player._carriedTick),
+      // so it still collides with terrain and other cats (Party-Animals feel).
+      p.grabbing = best; best.grabbedBy = p; p.grip = GRAB.gripMax; best.struggle = 0;
+      this.game.fx.dust(best.pos(), best.hex, 8, 0.6);
     } else p.grabCd = 0.4;
   }
 
   throw(p) {
     const t = p.grabbing; if (!t) return;
-    t.body.setBodyType(this.RBType.Dynamic, true);
     const dir = p.faceVec();
     t.body.setLinvel(V(dir.x * ABIL.throwVel, ABIL.throwLift, dir.z * ABIL.throwVel), true);
     t.knockTimer = MOVE.knockWindow;
-    t.grabbedBy = null; p.grabbing = null; p.grabCd = ABIL.grabCd;
+    t.grabbedBy = null; p.grabbing = null; p.grabCd = GRAB.cd; p.grip = 0;
     t.tumble = 1; t.tumbleAxis.set(Math.random() - 0.5, 0.2, Math.random() - 0.5).normalize();
     this.game.fx.dust(t.pos(), t.hex, 16, 1); this.game.fx.shake(0.55); this.game.fx.flash(0.18);
   }
 
+  /** Victim wins the tug-of-war: pops free and kicks the grabber back. */
+  breakFree(grabber) {
+    const t = grabber.grabbing; if (!t) return;
+    const gp = grabber.pos(), tp = t.pos();
+    let dx = tp.x - gp.x, dz = tp.z - gp.z; const d = Math.hypot(dx, dz) || 1; dx /= d; dz /= d;
+    const tm = t.mass(), gm = grabber.mass();
+    t.grabbedBy = null; grabber.grabbing = null;
+    t.hit(dx * GRAB.victimPopVel * tm, 3.2 * tm, dz * GRAB.victimPopVel * tm, {});      // victim pops free
+    grabber.hit(-dx * GRAB.breakKick * gm, 1.5 * gm, -dz * GRAB.breakKick * gm, {});    // grabber kicked back
+    grabber.grabCd = GRAB.breakStun; t.grabCd = GRAB.cd; t.struggle = 0; grabber.grip = 0;
+    this.game.fx.dust(tp, t.hex, 14, 1.1); this.game.fx.shake(0.4); this.game.fx.flash(0.12);
+  }
+
+  /** Silent release (elimination / attract respawn) — no kick. */
   releaseGrab(p) {
     const t = p.grabbing; if (!t) return;
-    if (t.alive) t.body.setBodyType(this.RBType.Dynamic, true);
-    t.grabbedBy = null; p.grabbing = null; p.grabCd = ABIL.grabCd;
+    t.grabbedBy = null; p.grabbing = null; p.grabCd = GRAB.cd; p.grip = 0;
   }
 }

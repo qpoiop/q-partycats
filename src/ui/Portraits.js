@@ -12,6 +12,7 @@ export function renderPortraits(renderer, proto, teams) {
   cam.position.set(1.1, 0.95, 2.4); cam.lookAt(0, 0.5, 0);
 
   const prevAlpha = renderer.getClearAlpha();
+  const prevColor = renderer.getClearColor(new THREE.Color());
   const thumbs = {};
   teams.forEach((t, ti) => {
     const cat = new Cat(proto, t.hex);
@@ -34,6 +35,7 @@ export function renderPortraits(renderer, proto, teams) {
     thumbs[ti] = cv.toDataURL();
     scene.remove(cat.model);
   });
-  renderer.setRenderTarget(null); renderer.setClearAlpha(prevAlpha);
+  renderer.setRenderTarget(null);
+  renderer.setClearColor(prevColor, prevAlpha); // restore the scene clear colour
   return thumbs;
 }

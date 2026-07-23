@@ -1,16 +1,20 @@
 import * as THREE from 'three';
+import { GRAB } from '../config.js';
 
 /* ============================================================
    Input — unifies desktop (keyboard + mouse drag) and mobile
    (virtual stick + action pads) into a single intent the game
    reads each frame via `humanMove()`. Ability presses are routed
-   straight to Actions on the local player.
+   straight to Actions on the local player. While the local cat is
+   grabbed, the same inputs feed the struggle meter instead.
    ============================================================ */
 export class Input {
   constructor(game) {
     this.game = game;
     this.keys = {};
     this.joyVec = null;
+    this._mv = new THREE.Vector3();   // reused — no per-frame allocation
+    this._sv = new THREE.Vector3();
     this._bindKeyboard();
     this._bindStick();
     this._bindCameraDrag();
@@ -22,8 +26,16 @@ export class Input {
   _bindKeyboard() {
     addEventListener('keydown', e => {
       if (this.game.state !== 'playing') return;
-      const k = e.key.toLowerCase(); this.keys[k] = true;
+      const k = e.key.toLowerCase(); const wasDown = this.keys[k]; this.keys[k] = true;
       const p = this._local(); if (!p) return;
+      // grabbed → mash to escape (fresh presses only), dash = burst
+      if (p.grabbedBy) {
+        if (!wasDown) {
+          if (k === 'shift') p.addStruggle(GRAB.struggleGainDash);
+          else if (k === ' ' || 'wasdqe'.includes(k) || k.startsWith('arrow')) { e.preventDefault(); p.addStruggle(GRAB.struggleGainMash); }
+        }
+        return;
+      }
       const a = this.game.actions;
       if (k === ' ') { e.preventDefault(); a.jump(p); }
       if (k === 'shift') a.dash(p);
@@ -39,7 +51,7 @@ export class Input {
     const fw = (k['w'] || k['arrowup'] ? 1 : 0) - (k['s'] || k['arrowdown'] ? 1 : 0);
     const sd = (k['d'] || k['arrowright'] ? 1 : 0) - (k['a'] || k['arrowleft'] ? 1 : 0);
     if (fw || sd) {
-      const v = new THREE.Vector3().addScaledVector(f, fw).addScaledVector(r, sd).normalize();
+      const v = this._mv.set(0, 0, 0).addScaledVector(f, fw).addScaledVector(r, sd).normalize();
       return { x: v.x, z: v.z, mag: 1 };
     }
     return null;
@@ -65,9 +77,11 @@ export class Input {
       const max = 55, d = Math.hypot(dx, dy);
       if (d > max) { dx = dx / d * max; dy = dy / d * max; }
       knob.style.transform = `translate(${dx}px,${dy}px)`;
+      const loc = this._local();
+      if (loc && loc.grabbedBy) { loc.addStruggle(GRAB.struggleGainMash * 0.4); this.joyVec = null; return; } // wiggle = struggle
       const { f, r } = this.game.cameraRig.forwardRight();
       const mag = Math.min(1, d / max);
-      const v = new THREE.Vector3().addScaledVector(f, -dy / max).addScaledVector(r, dx / max);
+      const v = this._sv.set(0, 0, 0).addScaledVector(f, -dy / max).addScaledVector(r, dx / max);
       if (v.lengthSq() > 0) { v.normalize(); this.joyVec = { x: v.x, z: v.z, mag }; }
     });
     const end = e => { if (e.pointerId !== id) return; id = null; this.joyVec = null; stick.style.display = 'none'; };
@@ -90,6 +104,7 @@ export class Input {
       b.addEventListener('pointerdown', e => {
         e.preventDefault(); e.stopPropagation();
         const p = this._local(); if (!p) return;
+        if (p.grabbedBy) { p.addStruggle(act === 'dash' ? GRAB.struggleGainDash : GRAB.struggleGainMash); return; }
         const a = this.game.actions;
         if (act === 'jump') a.jump(p);
         if (act === 'dash') a.dash(p);

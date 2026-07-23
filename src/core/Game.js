@@ -88,10 +88,10 @@ export class Game {
   }
 
   tick(dt) {
-    // human movement intent → local player
+    // human movement intent → local player (not while carried — inputs struggle instead)
     if (this.state === 'playing') {
       const p = this.players[0];
-      if (p && p.alive) {
+      if (p && p.alive && !p.grabbedBy) {
         const mv = this.input.humanMove();
         if (mv) { p.moveDir.set(mv.x, mv.z); p.moveMag = mv.mag; }
         else p.moveMag = 0;
@@ -117,6 +117,17 @@ export class Game {
     this.fx.update(dt);
     this.ui.updateBanner(dt);
     this.cameraRig.update(dt, this);
+
+    // local-player HUD extras: grab bars + underwater darkening
+    const h = this.players[0];
+    this.ui.updateGrab();
+    let dark = 0;
+    if (h && h.group.visible && (this.state === 'playing' || this.state === 'countdown')) {
+      const y = h.pos().y;
+      if (y < ARENA.waterY) dark = Math.min(1, (ARENA.waterY - y) / ARENA.darkenRange);
+    }
+    this.ui.setDark(dark);
+
     this.engine.render();
   }
 }

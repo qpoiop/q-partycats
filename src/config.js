@@ -23,14 +23,21 @@ export const ASSETS = {
   water: 'scene/water_animation.glb',
 };
 
-// ---------- arena ----------
+/* ---------- arena ----------
+   One radius R drives everything: spawns, decoration, and camera framing
+   are all expressed as ratios of R so nothing is hand-tuned in isolation. */
 export const ARENA = {
-  radius: 13.0,      // platform radius (slightly tighter → cats read bigger)
+  radius: 13.0,          // platform radius — the single source of scale
   rimHeight: -0.02,
-  doomY: -2.5,       // below this while off-platform → out (round resolves now)
-  menuKillY: -6,     // attract mode: respawn instead of KO
-  waterY: -46,       // visible sea the island floats over; fall ~2s then splash
-  hideY: -55,        // body removed just under the surface after the splash
+  spawnFactor: 0.5,      // cats spawn at R*this (central, clearly visible)
+  decorRingFactor: 0.97, // trees live on the rim ring (R*this) → play area stays clear
+  doomY: -2.5,           // drop past the edge → out (round resolves immediately)
+  menuKillY: -6,         // attract mode: respawn instead of KO
+  // sea + underwater abyss (fall = splash at surface, then sink into the dark)
+  waterY: -20,           // sea surface; the island visibly floats above it
+  sinkDrag: 2.6,         // vertical damping once submerged → ~3-4s sink
+  darkenRange: 26,       // depth (below waterY) over which the screen fades to black
+  hideY: -50,            // body removed here, deep in the abyss
 };
 
 // ---------- character physical body ----------
@@ -90,11 +97,39 @@ export const ABIL = {
   slamKnockBase: 6,
   slamKnockScale: 16,
   slamKnockLift: 8.0,
-  grabRadius: 2.3,
-  grabHold: 2.6,
-  grabCd: 0.5,
   throwVel: 13,
   throwLift: 6,
+};
+
+/* ---------- GRAB (Party-Animals-style tug-of-war) ----------
+   Grabber carries a struggling victim; it's a contest between the
+   grabber's grip (drains over time, faster while the victim struggles)
+   and the victim's struggle meter (fills by mashing; dash = burst).
+   The victim stays a *dynamic* body pulled to a hold point by a
+   critically-damped spring, so it still collides with the world. */
+export const GRAB = {
+  radius: 2.4,          // reach to grab a cat in front
+  cd: 0.5,              // cooldown after grab/throw/break
+  holdDist: 1.5,        // how far in front the victim is held
+  holdHeight: 0.25,
+  spring: 60,           // spring stiffness pulling victim → hold point
+  damp: 14,             // spring damping (≈ critical for the mass)
+  maxForce: 42,         // accel cap so the pull stays physical, not a snap
+  carrySpeedMul: 0.62,  // grabber slows while carrying
+  victimSpeedMul: 0.0,  // victim can't self-propel (only struggle)
+
+  gripMax: 1.0,
+  gripDrainBase: 0.16,      // grip lost per second just holding
+  gripDrainStruggle: 0.5,   // extra grip lost per second scaled by struggle
+
+  struggleMax: 1.0,
+  struggleDecay: 0.5,       // struggle bleeds off when not mashing
+  struggleGainMash: 0.14,   // per mash input (key/tap/stick flick)
+  struggleGainDash: 0.55,   // dash while carried = big burst (near-instant break)
+
+  breakKick: 7.5,       // knockback the victim kicks the grabber with on break
+  breakStun: 0.6,       // grabber can't re-grab for this long after a break
+  victimPopVel: 5.5,    // victim's escape pop away from grabber
 };
 
 // ---------- animation sync (kills foot-sliding) ----------
@@ -128,18 +163,19 @@ export const RENDER = {
   shadowFar: 90,
 };
 
+/* Distance is DERIVED so the arena always frames correctly at any aspect
+   (no hardcoded 20/27/44): we fit a sphere of radius R*margin in the view.
+   See CameraRig.framingDistance(). Only ratios/limits live here. */
 export const CAMERA = {
-  menuDist:   { landscape: 23, portrait: 28 },
-  playDist:   { landscape: 20, portrait: 27 },  // much closer → cats clearly visible
-  minDist: 14,
-  maxDist: 46,
+  framingMargin: { menu: 1.5, play: 1.2 }, // fit R*margin → play is a bit tighter
+  minDist: 12,
+  maxDist: 64,
   menuElevation: 0.5,
-  playElevation: 0.66,
-  followLerp: 3.4,
-  followFactor: 0.42,   // less drift, arena stays framed
-  followClamp: 6.5,
+  playElevation: 0.62,
+  fallElevation: 0.28,   // tilt down to watch the plunge into the sea
+  followLerp: 3.2,
+  followClamp: 5.5,      // how far the framing centroid may drift from centre
   menuSpin: 0.024,
-  fallElevation: 0.28,  // tilt down to watch the plunge
 };
 
 // ---------- match defaults ----------

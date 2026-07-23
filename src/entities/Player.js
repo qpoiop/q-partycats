@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { BODY, MOVE, ANIM } from '../config.js';
+import { BODY, MOVE, ANIM, GRAB } from '../config.js';
 import { Cat } from './Cat.js';
 
 const FOOT = BODY.footOffset;
@@ -54,7 +54,9 @@ export class Player {
     this.moveDir = new THREE.Vector2(); this.moveMag = 0; this.onGround = true;
     this.dashCd = 0; this.dashTimer = 0; this.dashAir = false;
     this.invuln = 0; this.slamming = false; this.knockTimer = 0;
-    this.grabbing = null; this.grabbedBy = null; this.grabTimer = 0; this.grabCd = 0; this.struggle = 0;
+    this.grabbing = null; this.grabbedBy = null; this.grabCd = 0;
+    this.grip = 0;        // grabber: remaining grip (drains → break)
+    this.struggle = 0;    // victim: escape meter (fills by mashing → break)
     this.tumble = 0; this.tumbleAxis = new THREE.Vector3(1, 0, 0); this.squash = 0;
     this.falling = false; this._splashed = false;
     this.botTimer = 0; this.wanderA = Math.random() * 6.28;
@@ -90,15 +92,8 @@ export class Player {
   preStep(dt) {
     if (!this.alive) return;
 
-    // being carried: follow grabber kinematically
-    if (this.grabbedBy) {
-      const g = this.grabbedBy, gp = g.pos(), dir = g.faceVec();
-      const r = BODY.capRadius * 2.2;
-      this.body.setNextKinematicTranslation(V(gp.x + dir.x * r, gp.y + 0.2, gp.z + dir.z * r));
-      this.struggle += dt;
-      this.faceTarget = g.facing + Math.PI;
-      return;
-    }
+    // being carried: physical spring pull toward the grabber's hold point
+    if (this.grabbedBy) { this._carriedTick(dt); return; }
 
     this.onGround = this.game.physics.grounded(this.body, FOOT + 0.18);
 
@@ -108,7 +103,11 @@ export class Player {
     if (this.dashTimer > 0) this.dashTimer -= dt;
     if (this.invuln > 0) this.invuln -= dt;
     if (this.grabCd > 0) this.grabCd -= dt;
-    if (this.grabbing) { this.grabTimer -= dt; if (this.grabTimer <= 0 || !this.grabbing.alive) this.game.actions.releaseGrab(this); }
+    // grabber: grip drains over time, faster while the victim struggles
+    if (this.grabbing) {
+      this.grip -= (GRAB.gripDrainBase + GRAB.gripDrainStruggle * this.grabbing.struggle) * dt;
+      if (this.grip <= 0 || !this.grabbing.alive) { this.game.actions.breakFree(this); }
+    }
 
     const steerable = this.knockTimer <= 0 && this.dashTimer <= 0 && !this.slamming;
     if (steerable) this._steer(dt);
@@ -119,12 +118,38 @@ export class Player {
     }
   }
 
+  /** Victim carried by a grabber: pulled to the hold point by a
+      critically-damped spring (stays dynamic → collides with the world). */
+  _carriedTick(dt) {
+    const g = this.grabbedBy;
+    if (!g || !g.alive) { this.grabbedBy = null; return; }
+    const gp = g.pos();
+    const hx = gp.x + Math.sin(g.facing) * GRAB.holdDist;
+    const hz = gp.z + Math.cos(g.facing) * GRAB.holdDist;
+    const hy = gp.y + GRAB.holdHeight;
+    const p = this.pos(), v = this.vel(), m = this.mass();
+    let ax = (hx - p.x) * GRAB.spring - v.x * GRAB.damp;
+    let ay = (hy - p.y) * GRAB.spring - v.y * GRAB.damp;
+    let az = (hz - p.z) * GRAB.spring - v.z * GRAB.damp;
+    const al = Math.hypot(ax, ay, az);
+    if (al > GRAB.maxForce) { const k = GRAB.maxForce / al; ax *= k; ay *= k; az *= k; }
+    this.body.applyImpulse(V(ax * m * dt, ay * m * dt, az * m * dt), true);
+    this.struggle = Math.max(0, this.struggle - GRAB.struggleDecay * dt);
+    this.faceTarget = g.facing + Math.PI;
+    this.onGround = false;
+    if (this.struggle >= GRAB.struggleMax) this.game.actions.breakFree(g);
+  }
+
+  /** Victim mashing to escape (from Input while carried, or Bot). */
+  addStruggle(amount) { if (this.grabbedBy) this.struggle = Math.min(GRAB.struggleMax, this.struggle + amount); }
+
   /* Velocity-target steering with bounded acceleration. */
   _steer(dt) {
     const v = this.vel();
     const m = this.mass();
     if (this.moveMag > 0.05) {
-      const targetSpeed = (this.onGround ? MOVE.speed : MOVE.airSpeed) * Math.min(1, this.moveMag);
+      const carry = this.grabbing ? GRAB.carrySpeedMul : 1;
+      const targetSpeed = (this.onGround ? MOVE.speed : MOVE.airSpeed) * carry * Math.min(1, this.moveMag);
       let dvx = this.moveDir.x * targetSpeed - v.x;
       let dvz = this.moveDir.y * targetSpeed - v.z;
       const accel = this.onGround ? MOVE.accelGround : MOVE.accelAir;
@@ -182,6 +207,12 @@ export class Player {
       if (this.alive && t.y < A.doomY) { this.game.match.eliminate(this); }
       if (!this.alive && this.falling) {
         if (!this._splashed && t.y < A.waterY) { this._splashed = true; this.game.fx.splash(t); }
+        if (t.y < A.waterY) {
+          // submerged: water drag → slow, steady sink into the abyss (~3-4s)
+          const v = this.vel();
+          const k = Math.min(1, dt * A.sinkDrag);
+          this.body.setLinvel(V(v.x * (1 - k), v.y + (-8 - v.y) * k, v.z * (1 - k)), true);
+        }
         if (t.y < A.hideY) {
           this.body.setEnabled(false); this.group.visible = false; this.shadow.visible = false;
           this.falling = false; this._splashed = false;
@@ -219,8 +250,12 @@ export class Player {
       sy = 1 - this.squash; sx = 1 + this.squash * 0.5;
     }
     if (this.grabbedBy) {
-      this.tilt.rotation.z = Math.sin(this.struggle * 22) * 0.4;
-      this.tilt.rotation.x = Math.sin(this.struggle * 17) * 0.22;
+      // flail — amplitude scales with the struggle meter
+      const now = performance.now(), amp = 0.28 + this.struggle * 0.7;
+      this.tilt.rotation.z = Math.sin(now * 0.021) * 0.55 * amp;
+      this.tilt.rotation.x = Math.sin(now * 0.017) * 0.34 * amp;
+    } else if (this.grabbing) {
+      this.tilt.rotation.x += (-0.16 - this.tilt.rotation.x) * Math.min(1, dt * 6); // lean back holding weight
     }
     this.tilt.scale.set(sx, sy, sx);
 

@@ -13,6 +13,11 @@ export class UI {
     this.game = game;
     this.screens = { home: $('#home'), lobby: $('#lobby'), hud: $('#hud'), results: $('#results') };
     this.bannerT = 0;
+    this._struggleBar = $('#grabUI .gbar.struggle');
+    this._gripBar = $('#grabUI .gbar.grip');
+    this._struggleFill = this._struggleBar.querySelector('.fill');
+    this._gripFill = this._gripBar.querySelector('.fill');
+    this._dark = $('#dark');
     this._injectKeyframes();
     this._wireButtons();
   }
@@ -119,6 +124,19 @@ export class UI {
     set('jump', p.onGround ? 0 : 0.6);
     set('slam', p.onGround ? 0 : 0);
   }
+
+  /** grip/struggle bars for the local player's grab state */
+  updateGrab() {
+    const p = this.game.players[0];
+    const carried = p && p.grabbedBy, carrying = p && p.grabbing;
+    this._struggleBar.classList.toggle('on', !!carried);
+    this._gripBar.classList.toggle('on', !carried && !!carrying);
+    if (carried) this._struggleFill.style.width = (p.struggle * 100) + '%';
+    else if (carrying) this._gripFill.style.width = (p.grip * 100) + '%';
+  }
+
+  /** underwater/abyss screen darkening (0..1) */
+  setDark(v) { this._dark.style.opacity = v; }
 
   // ---------- banner / countdown ----------
   showBanner(text, color, dur) {
