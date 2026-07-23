@@ -90,30 +90,28 @@ export class Arena {
     this.group.add(abyssFloor);
   }
 
-  /* Place the animated water model as a huge sea, centred at the surface
-     level. Centre it explicitly (no fragile min.y math) and play its waves. */
-  addWater(gltf) {
-    const root = gltf.scene;
-    let box = new THREE.Box3().setFromObject(root);
-    const size = box.getSize(new THREE.Vector3());
-    const foot = Math.max(size.x, size.z) || 1;
-    const s = 1600 / foot;                       // huge horizontal spread…
-    root.scale.set(s, Math.min(s, 2.2), s);      // …but keep vertical small so the
-                                                 // baked wave animation stays gentle
-    root.updateWorldMatrix(true, true);
-    box = new THREE.Box3().setFromObject(root);
-    const c = box.getCenter(new THREE.Vector3());
-    root.position.set(-c.x, ARENA.waterY - c.y, -c.z);   // centre the surface at waterY
-    root.traverse(o => { if (o.isMesh) { o.receiveShadow = false; o.frustumCulled = false; } });
-    this.scene.add(root);
-
-    if (gltf.animations && gltf.animations.length) {
-      const mixer = new THREE.AnimationMixer(root);
-      mixer.timeScale = 0.4;                       // calm, slow swell (was frantic)
-      gltf.animations.forEach(cl => mixer.clipAction(cl).play());
-      this._mixers.push(mixer);
-    }
-    this.water = root;
+  /* A full circular sea that actually covers the world (the bundled water GLB
+     is a thin strip, so we build the sea procedurally): one big blue disc at
+     the surface with a gentle vertex-wave shimmer, calm and fully blue. */
+  addWater(_gltf) {
+    const geo = new THREE.CircleGeometry(820, 128);
+    const mat = new THREE.MeshStandardMaterial({ color: 0x2f7ec4, roughness: 0.32, metalness: 0.18 });
+    mat.onBeforeCompile = (sh) => {
+      sh.uniforms.uTime = { value: 0 };
+      this._seaU = sh.uniforms.uTime;
+      sh.vertexShader = 'uniform float uTime;\n' + sh.vertexShader.replace(
+        '#include <begin_vertex>',
+        `#include <begin_vertex>
+         float w = sin(position.x * 0.05 + uTime * 1.1) * 0.5 + cos(position.y * 0.045 - uTime * 0.9) * 0.5;
+         transformed.z += w * 0.9;`,               // gentle swell (local z → world height after the -90° tilt)
+      );
+    };
+    const sea = new THREE.Mesh(geo, mat);
+    sea.rotation.x = -Math.PI / 2;
+    sea.position.y = ARENA.waterY;
+    sea.frustumCulled = false;
+    this.group.add(sea);
+    this.water = sea;
   }
 
   _buildPlatform() {
@@ -251,7 +249,7 @@ export class Arena {
   }
 
   update(dt) {
-    for (const m of this._mixers) m.update(dt);
+    if (this._seaU) this._seaU.value += dt;
     if (this._danger.visible) this._danger.material.opacity = 0.55 + 0.4 * Math.sin(performance.now() * 0.008);
     const N = this._moteN, pos = this._motePos, vel = this._moteVel;
     for (let i = 0; i < N; i++) {

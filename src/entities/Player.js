@@ -339,9 +339,11 @@ export class Player {
       this.tilt.rotateOnAxis(this.tumbleAxis, Math.PI * 0.5);
       this.tumble = 1;
     } else if (this.tumble > 0) {
-      this.tumble = Math.max(0, this.tumble - dt * 2.2);   // quicker, less floaty
+      // a strong tip/stagger in the knock direction that rights itself — no
+      // head-over-heels flip that plants the cat into the floor.
+      this.tumble = Math.max(0, this.tumble - dt * (this.onGround ? 4.5 : 2.4));
       this.tilt.rotation.set(0, 0, 0);
-      this.tilt.rotateOnAxis(this.tumbleAxis, (1 - this.tumble) * Math.PI * 2.0);  // fewer spins
+      this.tilt.rotateOnAxis(this.tumbleAxis, this.tumble * 1.15);
     } else {
       const lvx = Math.cos(this.facing) * v.x - Math.sin(this.facing) * v.z;
       const lvz = Math.sin(this.facing) * v.x + Math.cos(this.facing) * v.z;
@@ -376,6 +378,6 @@ export class Player {
       this.shadow.scale.setScalar(k);
       this.shadow.material.opacity = 0.34 * k;
     }
-    this.tilt.visible = this.invuln > 0 ? (Math.sin(performance.now() * 0.03) > 0) : true;
+    this.tilt.visible = true;   // no i-frame flicker (it read as a bug during combat)
   }
 }
