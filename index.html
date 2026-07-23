@@ -70,7 +70,7 @@
 
   /* brand logo image (logo.png) — shown only once it loads, else the CSS wordmark stays */
   .brandImg{ display:none; }
-  #home .logo .brandImg{ width:min(560px,86vw); height:auto;
+  #home .logo .brandImg{ width:min(560px,86vw); height:auto; max-height:38vh;
      filter:drop-shadow(0 6px 0 rgba(74,47,54,.4)) drop-shadow(0 16px 30px rgba(0,0,0,.35)); }
   #home .logo.has-img .brandImg{ display:block; }
   #home .logo.has-img .w{ display:none; }
@@ -274,8 +274,11 @@
   }
 
   @media (orientation:landscape) and (max-height:560px){
-    #home{ padding:12px 20px; }
-    #home .logo{ font-size:clamp(52px,12vh,104px); }
+    #home{ padding:8px 20px; justify-content:center; overflow:auto; }
+    #home .logo{ font-size:clamp(40px,10vh,84px); }
+    #home .logo .brandImg{ width:auto; max-height:22vh; }
+    #home .brand{ margin-top:0; }
+    #home .kicker{ display:none; }
     #home .kicker{ font-size:12px; letter-spacing:5px; }
     #home .sub{ margin-top:12px; font-size:14px; }
     #home .cta{ margin-top:18px; flex-direction:row; gap:12px; flex-wrap:wrap; justify-content:center; }

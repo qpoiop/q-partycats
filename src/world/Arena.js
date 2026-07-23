@@ -82,7 +82,9 @@ export class Arena {
     let box = new THREE.Box3().setFromObject(root);
     const size = box.getSize(new THREE.Vector3());
     const foot = Math.max(size.x, size.z) || 1;
-    root.scale.setScalar(1600 / foot);          // sea diameter
+    const s = 1600 / foot;                       // huge horizontal spread…
+    root.scale.set(s, Math.min(s, 2.2), s);      // …but keep vertical small so the
+                                                 // baked wave animation stays gentle
     root.updateWorldMatrix(true, true);
     box = new THREE.Box3().setFromObject(root);
     const c = box.getCenter(new THREE.Vector3());
@@ -92,6 +94,7 @@ export class Arena {
 
     if (gltf.animations && gltf.animations.length) {
       const mixer = new THREE.AnimationMixer(root);
+      mixer.timeScale = 0.4;                       // calm, slow swell (was frantic)
       gltf.animations.forEach(cl => mixer.clipAction(cl).play());
       this._mixers.push(mixer);
     }

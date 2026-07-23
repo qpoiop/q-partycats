@@ -59,7 +59,7 @@ export const PHYSICS = {
   platformFriction: 0.85,
   platformRestitution: 0.04,
   bodyFriction: 0.4,
-  bodyRestitution: 0.2,
+  bodyRestitution: 0.0,   // cats don't bounce off each other → no contact jitter
 };
 
 /* ---------- MOVEMENT (the "naturalness" fix) ----------
@@ -167,7 +167,9 @@ export const RENDER = {
    (no hardcoded 20/27/44): we fit a sphere of radius R*margin in the view.
    See CameraRig.framingDistance(). Only ratios/limits live here. */
 export const CAMERA = {
-  framingMargin: { menu: 1.5, play: 1.2 }, // fit R*margin → play is a bit tighter
+  // Fit factor (calibrated): a disc seen at an angle needs far less pull-back
+  // than a full sphere, so <1 frames the arena nicely (≈20u at 16:9).
+  framingMargin: { menu: 0.82, play: 0.66 },
   minDist: 12,
   maxDist: 64,
   menuElevation: 0.5,

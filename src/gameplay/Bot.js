@@ -42,9 +42,9 @@ export class Bot {
     let gx = Math.cos(p.wanderA), gz = Math.sin(p.wanderA);
     if (myD > ARENA.radius * 0.5) { gx = -me.x; gz = -me.z; p.wanderA = Math.atan2(gz, gx); }
     const gl = Math.hypot(gx, gz) || 1; gx /= gl; gz /= gl;
-    const v = p.vel();
-    p.body.setLinvel(V(gx * 1.6, v.y, gz * 1.6), true);
-    p.moveDir.set(gx, gz); p.moveMag = 1;
+    // steer via the movement controller (respects contacts) → no jitter when
+    // cats bump; low moveMag = a slow amble
+    p.moveDir.set(gx, gz); p.moveMag = 0.28;
     p.faceTarget = Math.atan2(gx, gz);
   }
 
