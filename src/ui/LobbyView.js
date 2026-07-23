@@ -39,7 +39,16 @@ export class LobbyView {
     const r = this.renderer;
     const w = innerWidth, h = innerHeight;
     if (r.domElement.clientWidth !== w || r.domElement.clientHeight !== h) r.setSize(w, h, true);
-    for (const c of this.cats) c.updateAnimation(dt, { speed: 0.2, onGround: true });
+    // lively idle: each cat periodically pops up on its hind legs and waves its
+    // paws + a little hop (offset per colour so they're not in lockstep).
+    const now = performance.now() * 0.001;
+    this.cats.forEach((c, i) => {
+      const ph = i * 1.7;
+      const cyc = ((now * 0.5 + ph) % 3);              // 3s cycle
+      const wave = cyc < 1.1 ? Math.sin((cyc / 1.1) * Math.PI) : 0;   // wave ~1.1s of each cycle
+      c.updateAnimation(dt, { speed: 0.2, onGround: true, cheer: wave });
+      c.model.position.y = Math.abs(Math.sin(now * 3.2 + ph)) * 0.1 * (0.35 + wave);
+    });
 
     r.clear();
     r.setScissorTest(true);

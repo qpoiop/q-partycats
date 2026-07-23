@@ -82,36 +82,29 @@ export class Arena {
      is a thin strip, so we build the sea procedurally): one big blue disc at
      the surface with a gentle vertex-wave shimmer, calm and fully blue. */
   addWater(_gltf) {
-    // Dense enough grid that the swell has vertices to move (a CircleGeometry
-    // fan is too sparse at the rim); the ring geometry gives even resolution.
-    const geo = new THREE.RingGeometry(0, 820, 220, 40);
-    const mat = new THREE.MeshStandardMaterial({ color: 0x2f7ec4, roughness: 0.34, metalness: 0.25 });
-    // Wave field shared by the vertex displacement AND the analytic normal, so
-    // crests/troughs actually catch the light (flat normals = flat blue).
-    const WAVE = `
-      float _t = uTime;
-      float _a = position.x * 0.05 + _t * 1.3;
-      float _b = position.y * 0.062 - _t * 1.05;
-      float _c = (position.x + position.y) * 0.11 + _t * 1.9;
-      float _w  = sin(_a) * 0.62 + cos(_b) * 0.5 + sin(_c) * 0.32;
-      float _dx = cos(_a) * 0.05 * 0.62 + cos(_c) * 0.11 * 0.32;
-      float _dy = -sin(_b) * 0.062 * 0.5 + cos(_c) * 0.11 * 0.32;`;
-    const AMP = 2.6;
+    // Stylised FLAT-SHADED sea: coarse-ish grid + vertex swell, and flatShading
+    // derives a face normal per triangle from the displaced positions — so each
+    // facet catches the sun differently and the swell reads as chunky low-poly
+    // waves (a smooth surface just looks like flat blue no matter the displacement).
+    const geo = new THREE.RingGeometry(2, 780, 96, 40);
+    const mat = new THREE.MeshStandardMaterial({ color: 0x2c78bf, roughness: 0.42, metalness: 0.1, flatShading: true });
+    const AMP = 1.9;
     mat.onBeforeCompile = (sh) => {
       sh.uniforms.uTime = { value: 0 };
       this._seaU = sh.uniforms.uTime;
       sh.vertexShader = 'uniform float uTime;\nvarying float vWave;\n' + sh.vertexShader
-        .replace('#include <beginnormal_vertex>', `${WAVE}
-          vec3 objectNormal = normalize(vec3(-_dx * ${AMP.toFixed(1)}, -_dy * ${AMP.toFixed(1)}, 1.0));
-          vWave = _w;`)
         .replace('#include <begin_vertex>', `#include <begin_vertex>
+          float _w = sin(position.x * 0.055 + uTime * 1.4) * 0.62
+                   + cos(position.y * 0.07  - uTime * 1.15) * 0.5
+                   + sin((position.x - position.y) * 0.13 + uTime * 2.1) * 0.32;
+          vWave = _w;
           transformed.z += _w * ${AMP.toFixed(1)};`);
-      // moving light/dark bands + foam crests reinforce the lit swell
+      // tint crests toward foam-white, troughs toward deep blue → motion pops
       sh.fragmentShader = 'varying float vWave;\n' + sh.fragmentShader.replace(
         '#include <color_fragment>',
         `#include <color_fragment>
-         diffuseColor.rgb *= 0.72 + 0.5 * (vWave * 0.5 + 0.5);
-         diffuseColor.rgb += vec3(0.10, 0.18, 0.22) * smoothstep(0.7, 1.25, vWave);`,
+         diffuseColor.rgb *= 0.7 + 0.42 * (vWave * 0.5 + 0.5);
+         diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.7, 0.85, 0.95), smoothstep(0.85, 1.35, vWave));`,
       );
     };
     const sea = new THREE.Mesh(geo, mat);

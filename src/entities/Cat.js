@@ -155,18 +155,19 @@ export class Cat {
     // rear up on hind legs (grab / struggle) — front paws lift like hands
     if (rear > 0.02) for (const leg of fl) this._rot(leg, -1.25 * rear + Math.sin(t * 12) * 0.25 * rear, 0, 0);
 
-    // PUNCH (주먹치기) — one front paw thrusts forward, fast out-and-back
+    // PUNCH (주먹치기) — big lead-paw hook that snaps forward and back
     if (punch > 0.02 && fl.length) {
       const sw = Math.sin(Math.min(1, punch) * Math.PI);   // 0→1→0 over the swing
-      this._rot(fl[0], -1.7 * sw, 0.5 * sw, 0);             // lead paw jab
-      if (fl[1]) this._rot(fl[1], -0.5 * sw, 0, 0);          // off paw guards
-      if (this.head) this._rot(this.head, -0.25 * sw, 0, 0);
+      this._rot(fl[0], -2.2 * sw, 0.7 * sw, -0.5 * sw);    // lead paw drives across
+      if (fl[1]) this._rot(fl[1], -0.9 * sw, 0, 0.3 * sw); // off paw cocks back
+      if (this.head) this._rot(this.head, -0.3 * sw, 0.25 * sw, 0);
     }
 
-    // FLYING KICK (날라차기) — both front paws punch forward, hind legs tuck back
+    // FLYING KICK (날라차기) — both front paws punch forward, hind legs thrust back
     if (kick > 0.02 && fl.length) {
-      for (const leg of fl) this._rot(leg, -1.5 * kick, 0, 0);
-      for (const leg of bl) this._rot(leg, 0.7 * kick, 0, 0);
+      for (const leg of fl) this._rot(leg, -1.9 * kick, 0, 0);
+      for (const leg of bl) this._rot(leg, 1.0 * kick, 0, 0);
+      if (this.head) this._rot(this.head, -0.4 * kick, 0, 0);
     }
 
     // SLIDE (슬라이딩) — low tackle, front paws reach forward flat

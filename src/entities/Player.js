@@ -60,7 +60,8 @@ export class Player {
     this.grabbing = null; this.grabbedBy = null; this.grabCd = 0;
     this.grip = 0;        // grabber: remaining grip (drains → break)
     this.struggle = 0;    // victim: escape meter (fills by mashing → break)
-    this.tumble = 0; this.tumbleAxis = new THREE.Vector3(1, 0, 0); this.squash = 0;
+    this.tumble = 0; this.tumbleAxis = new THREE.Vector3(1, 0, 0); this._axisH = new THREE.Vector3(1, 0, 0); this.squash = 0;
+    this._leanX = 0; this._leanZ = 0;   // persistent body-lean (transients add on top, no compounding)
     this.knockdown = 0;   // >0 = downed: can't act, must get up
     this.teeter = 0; this._teetered = false;   // hanging/flailing at the ledge
     this.falling = false; this._splashed = false; this.celebrating = false;
@@ -316,41 +317,66 @@ export class Player {
       // hanging on the lip → flail
       const now = performance.now() * 0.001;
       this.tilt.rotation.set(Math.sin(now * 22) * 0.3, 0, Math.sin(now * 30) * 0.5);
+    } else if (this.grabbedBy) {
+      // hauled up onto the hind legs, struggling (persistent lerp → stands tall,
+      // no velocity-lean fighting it). Front-paw flail is layered in Cat.
+      const now = performance.now(), amp = 0.3 + this.struggle * 0.7;
+      this.tilt.rotation.x += (-1.2 - this.tilt.rotation.x) * Math.min(1, dt * 9);
+      this.tilt.rotation.z = Math.sin(now * 0.02) * 0.5 * amp;
+      this.tilt.rotation.y += (0 - this.tilt.rotation.y) * Math.min(1, dt * 6);
+      sy = 1 - this.squash; sx = 1 + this.squash * 0.5;
+    } else if (this.grabbing) {
+      // standing tall on hind legs, holding the victim out in front
+      this.tilt.rotation.x += (-1.15 - this.tilt.rotation.x) * Math.min(1, dt * 9);
+      this.tilt.rotation.z += (0 - this.tilt.rotation.z) * Math.min(1, dt * 6);
+      this.tilt.rotation.y += (0 - this.tilt.rotation.y) * Math.min(1, dt * 6);
+      sy = 1 - this.squash; sx = 1 + this.squash * 0.5;
     } else if (this.knockdown > 0) {
-      // downed → lie on the ground (getup roll plays when knockdown ends)
+      // downed → lie flat on the ground. Roll around a HORIZONTAL axis (feet
+      // pivot) so the body lays out on the surface instead of screwing its head
+      // through the floor; capped under 90° so nothing dips below ground.
+      this._axisH.set(this.tumbleAxis.x, 0, this.tumbleAxis.z);
+      if (this._axisH.lengthSq() < 1e-4) this._axisH.set(1, 0, 0);
+      this._axisH.normalize();
       this.tilt.rotation.set(0, 0, 0);
-      this.tilt.rotateOnAxis(this.tumbleAxis, Math.PI * 0.5);
+      this.tilt.rotateOnAxis(this._axisH, Math.PI * 0.46);
       this.tumble = 1;
     } else if (this.tumble > 0) {
-      // a strong tip/stagger in the knock direction that rights itself — no
-      // head-over-heels flip that plants the cat into the floor.
+      // a stagger/tip in the knock direction that rights itself — horizontal
+      // axis only, capped, so it never flips head-first into the floor.
       this.tumble = Math.max(0, this.tumble - dt * (this.onGround ? 4.5 : 2.4));
+      this._axisH.set(this.tumbleAxis.x, 0, this.tumbleAxis.z);
+      if (this._axisH.lengthSq() < 1e-4) this._axisH.set(1, 0, 0);
+      this._axisH.normalize();
       this.tilt.rotation.set(0, 0, 0);
-      this.tilt.rotateOnAxis(this.tumbleAxis, this.tumble * 1.15);
+      this.tilt.rotateOnAxis(this._axisH, Math.min(0.9, this.tumble * 0.9));
+    } else if (this.sliding > 0) {
+      // SLIDE — belly-low tackle, nose down, held for the slide window
+      const s = Math.min(1, this.sliding / ABIL.slideTime);
+      this.tilt.rotation.set(0, 0, 0);
+      this.tilt.rotation.x = 0.75 * s;
+      sy = 1 - this.squash; sx = 1 + this.squash * 0.5;
+    } else if (this.dashAir && this.dashTimer > 0) {
+      // FLYING KICK — clean lunge: lean back, legs thrust forward (Cat kick pose).
+      // Override the velocity lean so it reads as a kick, not a tumble/roll.
+      this.tilt.rotation.set(-0.7, 0, 0);
+      sy = 1 - this.squash; sx = 1 + this.squash * 0.5;
     } else {
+      // Persistent velocity-lean lives in _leanX/_leanZ; transient action offsets
+      // (strain, punch lunge) are added on top and the body rotation is set
+      // ABSOLUTELY — so the offsets never compound frame-to-frame into a faceplant.
       const lvx = Math.cos(this.facing) * v.x - Math.sin(this.facing) * v.z;
       const lvz = Math.sin(this.facing) * v.x + Math.cos(this.facing) * v.z;
-      this.tilt.rotation.x += (THREE.MathUtils.clamp(lvz * 0.05, -0.4, 0.4) - this.tilt.rotation.x) * Math.min(1, dt * 6);
-      this.tilt.rotation.z += (THREE.MathUtils.clamp(-lvx * 0.05, -0.4, 0.4) - this.tilt.rotation.z) * Math.min(1, dt * 6);
-      this.tilt.rotation.y += (0 - this.tilt.rotation.y) * Math.min(1, dt * 6);
-      // pushing hard but not moving (grinding into someone) → strain-lean forward
+      this._leanX += (THREE.MathUtils.clamp(lvz * 0.05, -0.4, 0.4) - this._leanX) * Math.min(1, dt * 6);
+      this._leanZ += (THREE.MathUtils.clamp(-lvx * 0.05, -0.4, 0.4) - this._leanZ) * Math.min(1, dt * 6);
+      let ox = this._leanX, oz = this._leanZ;
       if (this.moveMag > 0.5 && this.onGround) {
         const blocked = Math.max(0, 1 - Math.hypot(v.x, v.z) / (MOVE.speed * 0.55));
-        this.tilt.rotation.x += 0.42 * blocked;   // strain-lean into the shove
+        ox += 0.42 * blocked;   // strain-lean into a shove
       }
-      // attack posture: slide belly-low, flying-kick lunge back
-      if (this.sliding > 0) this.tilt.rotation.x += 0.6 * Math.min(1, this.sliding / ABIL.slideTime);
-      else if (this.dashAir && this.dashTimer > 0) this.tilt.rotation.x -= 0.45 * Math.min(1, this.dashTimer / ABIL.dashTime);
+      if (this.punching > 0) ox += 0.35 * Math.sin(Math.min(1, this.punching / ABIL.punchTime) * Math.PI);   // jab lunge
+      this.tilt.rotation.set(ox, 0, oz);
       sy = 1 - this.squash; sx = 1 + this.squash * 0.5;
-    }
-    if (this.grabbedBy) {
-      // reared up on hind legs, struggling — sway + front-paw flail (in Cat)
-      const now = performance.now(), amp = 0.3 + this.struggle * 0.7;
-      this.tilt.rotation.x += (-0.95 - this.tilt.rotation.x) * Math.min(1, dt * 9);   // stand up
-      this.tilt.rotation.z = Math.sin(now * 0.02) * 0.5 * amp;
-    } else if (this.grabbing) {
-      this.tilt.rotation.x += (-0.85 - this.tilt.rotation.x) * Math.min(1, dt * 9);   // stand up, holding
-      this.tilt.rotation.z += (0 - this.tilt.rotation.z) * Math.min(1, dt * 6);
     }
     this.tilt.scale.set(sx, sy, sx);
 
@@ -359,7 +385,7 @@ export class Player {
     const flail = this.grabbedBy ? (0.4 + this.struggle * 0.6) : this.teeter > 0 ? 1 : this.knockdown > 0 ? 0.85 : this.tumble > 0 ? this.tumble : 0;
     this.cat.updateAnimation(dt, {
       speed: sp, onGround: this.onGround, grabbed: !!this.grabbedBy, flail, rear,
-      punch: this.punching > 0 ? Math.min(1, this.punching / 0.2) : 0,
+      punch: this.punching > 0 ? Math.min(1, this.punching / ABIL.punchTime) : 0,
       kick:  (this.dashAir && this.dashTimer > 0) ? Math.min(1, this.dashTimer / ABIL.dashTime) : 0,
       slide: this.sliding > 0 ? Math.min(1, this.sliding / ABIL.slideTime) : 0,
     });

@@ -103,12 +103,12 @@ export const ABIL = {
   dashStrikeAirLift: 4.0,
 
   // punch (주먹치기) — quick jab, the bread-and-butter attack
-  punchCd: 0.45,
+  punchCd: 0.5,
   punchReach: 1.9,
   punchArc: 0.45,      // dot threshold — must be roughly facing the target
   punchKnock: 9,
   punchLift: 2.8,
-  punchWindup: 0.12,   // brief anim before the hit lands
+  punchTime: 0.34,     // pose duration — long enough to read the swing
 
   // slide (슬라이딩) = jump+grab → low tackle
   slideVel: 12,
@@ -216,7 +216,7 @@ export const CAMERA = {
   minDist: 12,
   maxDist: 64,
   menuElevation: 0.42,
-  playElevation: 0.44,   // low angle → sea/horizon shows beyond the island
+  playElevation: 0.6,    // raised angle → clearer read of the arena from above
   fallElevation: 0.28,   // tilt down to watch the plunge into the sea
   followLerp: 2.4,       // smoother follow → fast-flung cats don't jerk the camera
   followClamp: 5.5,      // how far the framing centroid may drift from centre

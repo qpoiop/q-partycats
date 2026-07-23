@@ -55,7 +55,7 @@ export class Actions {
     if (p.grabbedBy || p.knockdown > 0 || !p.alive) return;
     if (p.grabbing) { this.throw(p); return; }
     if (p.punchCd > 0) return;
-    p.punchCd = ABIL.punchCd; p.punching = 0.2;   // drives the jab pose
+    p.punchCd = ABIL.punchCd; p.punching = ABIL.punchTime;   // drives the jab pose
     const dir = p.faceVec(), me = p.pos();
     let hit = false;
     for (const o of this.game.players) {
