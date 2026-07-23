@@ -160,6 +160,9 @@ export class Player {
     if (!this.onGround && (this.knockTimer > 0 || this.knockdown > 0)) {
       const v = this.vel(), k = Math.max(0, 1 - MOVE.airDrag * dt);
       this.body.setLinvel(V(v.x * k, v.y, v.z * k), true);
+      // a hard launch (thrown / kicked / punched off) leaves a motion trail
+      const sp = Math.hypot(v.x, v.z);
+      if (sp > 5) this.game.fx.streak(this, { x: v.x / sp, z: v.z / sp });
     }
 
     const downed = this.knockdown > 0;
