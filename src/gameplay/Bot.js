@@ -66,7 +66,7 @@ export class Bot {
     else { gx = Math.cos(p.wanderA); gz = Math.sin(p.wanderA); p.wanderA += (Math.random() - 0.5) * 0.4; }
     const gl = Math.hypot(gx, gz) || 1;
     p.moveDir.set(gx / gl, gz / gl);
-    p.moveMag = nearEdge ? 0.95 : 0.68;                     // weaker than a committed player → losable grind
+    p.moveMag = nearEdge ? 0.95 : 0.66;                     // weaker than a committed player → losable grind
     p.faceTarget = Math.atan2(gx, gz);
 
     if (p.botTimer <= 0 && tgt && !nearEdge) {
@@ -76,7 +76,7 @@ export class Bot {
       if (p.grabbing) { const a = Math.atan2(tp.x, tp.z); p.facing = a; p.faceTarget = a; A.throw(p); return; }
       p.facing = Math.atan2(tp.x - me.x, tp.z - me.z);       // aim at the target
       if (td < 1.7 && p.grabCd <= 0 && Math.random() < 0.32) A.grab(p);       // grab up close
-      else if (td < 4.2 && p.dashCd <= 0 && Math.random() < 0.45) A.dash(p);  // dash-shove
+      else if (td < 4.5 && p.dashCd <= 0 && Math.random() < 0.72) A.dash(p);  // dash-shove (the KO tool)
       else if (!p.onGround && !p.slamming && td < ABIL.slamRadius) A.slam(p);
     }
   }

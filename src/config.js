@@ -56,23 +56,25 @@ export const PHYSICS = {
   gravity: -18,          // stronger than proto (-14) → snappier jumps/landings
   timestep: 1 / 60,
   maxSubsteps: 5,
-  platformFriction: 0.6,
+  platformFriction: 0.5,   // cats can be shoved (movement is force-based, not friction-based)
   platformRestitution: 0.04,
   bodyFriction: 0.85,     // cats grip when pressed together → a grinding shove, not a slide
   bodyRestitution: 0.0,   // cats don't bounce off each other → no contact jitter
 };
 
-/* ---------- MOVEMENT (the "naturalness" fix) ----------
-   Prototype used raw per-frame forces with a 1.8 m/s soft cap →
-   sluggish, floaty, unresponsive. We now drive toward a target
-   velocity with a bounded acceleration ("character controller"
-   feel) that stays physical but crisp. External knockbacks are
-   preserved via a knock window during which steering is paused. */
+/* ---------- MOVEMENT (force-based, physical) ----------
+   A spring force pulls the body toward a target velocity (F ∝ target−v),
+   so momentum, contacts and shoving are resolved by Rapier — pushing into
+   another cat transfers force, and the harder-committed cat wins the grind.
+   `gain` trades feel: higher = crisper, lower = more inertia. */
 export const MOVE = {
-  speed: 6.2,          // ground top speed (m/s)  [was ~1.8]
+  speed: 6.2,          // ground top speed (m/s)
   airSpeed: 5.4,       // target speed while airborne
-  accelGround: 55,     // m/s^2 toward desired velocity (snappy)
-  accelAir: 18,        // weaker air control
+  gain: 13,            // ground velocity-spring stiffness (force toward target)
+  gainAir: 5,          // weaker air control
+  brake: 9,            // coast-to-stop force when no input
+  accelGround: 55,     // (legacy — unused by the force controller)
+  accelAir: 18,
   frictionDecel: 34,   // m/s^2 braking when no input on ground
   turnRateGround: 9,   // facing lerp rate — smooth, not whip-snappy
   turnRateAir: 5,

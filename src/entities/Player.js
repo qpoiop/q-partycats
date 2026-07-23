@@ -164,9 +164,6 @@ export class Player {
       if (Math.random() < 0.5) this.game.fx.dust(this.pos(), this.hex, 2, 0.4);
       this._dashStrike();
     }
-    // grind: pressing into another cat shoves *them* — scaled by your commitment,
-    // so a full push (mag 1) overpowers a half-hearted bot (직접 임펄스 → 마찰 무시)
-    if (steerable && this.moveMag > 0.5 && this.onGround) this._grindShove(dt);
   }
 
   /** Victim carried by a grabber: pulled to the hold point by a
@@ -194,29 +191,22 @@ export class Player {
   /** Victim mashing to escape (from Input while carried, or Bot). */
   addStruggle(amount) { if (this.grabbedBy) this.struggle = Math.min(GRAB.struggleMax, this.struggle + amount); }
 
-  /* Velocity-target steering with bounded acceleration. */
+  /* Force-based steering: a velocity spring, resolved by the physics solver.
+     Because it's a force (not a velocity snap), momentum carries, contacts
+     push back, and the more-committed cat wins a shove. */
   _steer(dt) {
-    const v = this.vel();
-    const m = this.mass();
+    const v = this.vel(), m = this.mass();
+    const gain = this.onGround ? MOVE.gain : MOVE.gainAir;
     if (this.moveMag > 0.05) {
       const carry = this.grabbing ? GRAB.carrySpeedMul : 1;
-      const targetSpeed = (this.onGround ? MOVE.speed : MOVE.airSpeed) * carry * Math.min(1, this.moveMag);
-      let dvx = this.moveDir.x * targetSpeed - v.x;
-      let dvz = this.moveDir.y * targetSpeed - v.z;
-      const accel = this.onGround ? MOVE.accelGround : MOVE.accelAir;
-      const maxDv = accel * dt;
-      const len = Math.hypot(dvx, dvz);
-      if (len > maxDv) { const k = maxDv / len; dvx *= k; dvz *= k; }
-      this.body.applyImpulse(V(dvx * m, 0, dvz * m), true); // impulse = m·Δv
+      const target = (this.onGround ? MOVE.speed : MOVE.airSpeed) * carry * Math.min(1, this.moveMag);
+      const tx = this.moveDir.x * target, tz = this.moveDir.y * target;
+      // impulse = m · gain · (targetVel − vel) · dt  → a spring toward target velocity
+      this.body.applyImpulse(V((tx - v.x) * gain * m * dt, 0, (tz - v.z) * gain * m * dt), true);
       this.faceTarget = Math.atan2(this.moveDir.x, this.moveDir.y);
     } else if (this.onGround) {
-      // ground friction → smooth stop
-      const sp = Math.hypot(v.x, v.z);
-      if (sp > 0.01) {
-        const dec = Math.min(sp, MOVE.frictionDecel * dt);
-        const k = (sp - dec) / sp;
-        this.body.setLinvel(V(v.x * k, v.y, v.z * k), true);
-      }
+      // coast to a stop (a brake force, not a hard velocity kill)
+      this.body.applyImpulse(V(-v.x * MOVE.brake * m * dt, 0, -v.z * MOVE.brake * m * dt), true);
     }
   }
 
