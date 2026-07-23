@@ -65,25 +65,23 @@ export class UI {
     const g = this.game;
     if (g.online && g.roomPresence) return this._renderLobbyOnline();
     const slots = $('#slots'); slots.innerHTML = '';
-    const order = this._teamOrder();
+    if (g.humanColor >= g.config.count) g.humanColor = 0;
+    // Pick your cat directly: one fixed card per colour. The card you tap is
+    // "you" (name under the thumbnail = ready); the rest fill with bots.
     for (let i = 0; i < g.config.count; i++) {
-      const isYou = i === 0; const ti = order[i]; const t = TEAMS[ti];
+      const isYou = i === g.humanColor; const t = TEAMS[i];
       const slot = document.createElement('div');
       slot.className = 'slot filled' + (isYou ? ' you' : '');
       slot.innerHTML = `<div class="badge">P${i + 1}</div><div class="glow" style="background:${t.css}"></div>
         <div class="portrait"></div>
         <div class="who">${isYou ? '나' : BOT_NAMES[(i * 2) % BOT_NAMES.length]}</div>
-        <div class="tag">${isYou ? '플레이어' : '봇 (자동 참가)'}</div>`;
+        ${isYou ? '<div class="rdy">준비 완료 ✓</div>' : '<div class="tag">봇 (자동 참가)</div>'}`;
+      slot.addEventListener('click', () => { g.humanColor = i; this.renderLobby(); });
       slots.appendChild(slot);
     }
-    this._lobbyCards = [...slots.querySelectorAll('.portrait')].map((el, i) => ({ el, colorIndex: order[i] }));
-    const cw = $('#colorPick');
-    cw.innerHTML = TEAMS.map((tt, ci) => `<button class="sw ${ci === g.humanColor ? 'on' : ''}" data-c="${ci}" style="background:${tt.css};color:${tt.css}" aria-label="${tt.name}"></button>`).join('');
-    cw.querySelectorAll('.sw').forEach(s => s.addEventListener('click', () => { g.humanColor = +s.dataset.c; this.renderLobby(); }));
+    this._lobbyCards = [...slots.querySelectorAll('.portrait')].map((el, i) => ({ el, colorIndex: i }));
     this.renderPills();
   }
-
-  _teamOrder() { const h = this.game.humanColor; return [h, ...[0, 1, 2, 3].filter(c => c !== h)]; }
 
   _renderLobbyOnline() {
     const g = this.game, pres = g.roomPresence, me = g.net.self;
@@ -97,14 +95,12 @@ export class UI {
       el.innerHTML = `<div class="badge">P${i + 1}</div><div class="glow" style="background:${t.css}"></div>
         <div class="portrait"></div>
         <div class="who">${p ? (isYou ? '나' : p.name) : '빈자리'}</div>
-        <div class="tag">${p ? (p.host ? '방장' : (p.connected ? '플레이어' : '연결 끊김…')) : '봇 자동참가'}</div>`;
+        ${isYou ? '<div class="rdy">준비 완료 ✓ · 탭해서 색 변경</div>'
+                : `<div class="tag">${p ? (p.host ? '방장' : (p.connected ? '플레이어' : '연결 끊김…')) : '봇 자동참가'}</div>`}`;
+      if (isYou) { const cur = p.color; el.style.cursor = 'pointer'; el.addEventListener('click', () => g.net.setColor((cur + 1) % TEAMS.length)); }
       slots.appendChild(el);
     }
     this._lobbyCards = [...slots.querySelectorAll('.portrait')].map((el, i) => ({ el, colorIndex: (bySlot[i] ? bySlot[i].color : i) }));
-    const myColor = me && bySlot[me.slot] ? bySlot[me.slot].color : 0;
-    const cw = $('#colorPick');
-    cw.innerHTML = TEAMS.map((tt, ci) => `<button class="sw ${ci === myColor ? 'on' : ''}" data-c="${ci}" style="background:${tt.css};color:${tt.css}"></button>`).join('');
-    cw.querySelectorAll('.sw').forEach(s => s.addEventListener('click', () => g.net.setColor(+s.dataset.c)));
     const host = me && me.host;
     const cp = $('#countPills'); cp.innerHTML = '';
     MATCH.countOptions.forEach(n => { const b = document.createElement('button'); b.className = 'pill' + (pres.config.count === n ? ' on' : ''); b.textContent = n + '인'; if (host) b.onclick = () => g.net.setConfig(n, pres.config.rounds); cp.appendChild(b); });

@@ -78,8 +78,8 @@ export const MOVE = {
   frictionDecel: 34,   // m/s^2 braking when no input on ground
   turnRateGround: 9,   // facing lerp rate — smooth, not whip-snappy
   turnRateAir: 5,
-  knockWindow: 0.6,    // longer no-steer after a hit → knocked cats fly (Party-Animals-y)
-  airDrag: 0.5,
+  knockWindow: 0.42,   // no-steer after a hit (not so long they fly across the map)
+  airDrag: 0.9,
   shove: 15,           // direct contact-shove — makes pressing feel like a push (decisive shoves come from dash)
 };
 
@@ -97,17 +97,17 @@ export const ABIL = {
   dashAirLift: 2.4,
   dashInvuln: 0.4,
   dashTime: 0.4,       // active window (contact = strike)
-  dashStrikeGround: 8.0,
-  dashStrikeGroundLift: 2.5,
-  dashStrikeAir: 12.0,     // flying-kick punch — hits hard
-  dashStrikeAirLift: 4.5,
+  dashStrikeGround: 5.5,
+  dashStrikeGroundLift: 2.2,
+  dashStrikeAir: 8.5,      // flying-kick punch — hits hard
+  dashStrikeAirLift: 4.0,
 
   // punch (주먹치기) — quick jab, the bread-and-butter attack
   punchCd: 0.45,
   punchReach: 1.9,
   punchArc: 0.45,      // dot threshold — must be roughly facing the target
-  punchKnock: 13,
-  punchLift: 3.5,
+  punchKnock: 9,
+  punchLift: 2.8,
   punchWindup: 0.12,   // brief anim before the hit lands
 
   // slide (슬라이딩) = jump+grab → low tackle
@@ -153,8 +153,8 @@ export const KNOCKDOWN = {
 export const GRAB = {
   radius: 2.4,          // reach to grab a cat in front
   cd: 0.5,              // cooldown after grab/throw/break
-  holdDist: 1.5,        // how far in front the victim is held
-  holdHeight: 0.25,
+  holdDist: 1.4,        // how far in front the victim is held
+  holdHeight: 0.95,     // lift the victim clearly off the ground (was planted in it)
   spring: 60,           // spring stiffness pulling victim → hold point
   damp: 14,             // spring damping (≈ critical for the mass)
   maxForce: 42,         // accel cap so the pull stays physical, not a snap

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { BODY, MOVE, ANIM, GRAB, KNOCKDOWN, EDGE } from '../config.js';
+import { BODY, MOVE, ANIM, GRAB, KNOCKDOWN, EDGE, ABIL } from '../config.js';
 import { Cat } from './Cat.js';
 
 const FOOT = BODY.footOffset;
@@ -253,10 +253,10 @@ export class Player {
     if (menu) {
       if (t.y < A.menuKillY) { this.game.match.respawnMenu(this); return; }
     } else {
-      // catch the ledge: drifting off slowly → teeter (a hard shove skips it)
-      if (this.alive && this.teeter <= 0 && !this._teetered && !this.falling && t.y > A.doomY) {
+      // catch the ledge: sliding off slowly → teeter (a hard shove skips it)
+      if (this.alive && !this.onGround && this.teeter <= 0 && !this._teetered && !this.falling && t.y > A.doomY) {
         const d = Math.hypot(t.x, t.z);
-        if (d > A.radius && d < A.radius + EDGE.teeterBand) {
+        if (d > A.radius && d < A.radius + EDGE.teeterBand + 1) {
           const v = this.vel(), outV = (v.x * t.x + v.z * t.z) / (d || 1);
           if (outV < EDGE.teeterOutSpeed && v.y > -7) { this.teeter = EDGE.teeterTime; this._teetered = true; this.game.fx.dust(t, this.hex, 6, 0.5); }
         }
@@ -295,15 +295,15 @@ export class Player {
     this.group.position.set(t.x, t.y - FOOT, t.z);
     this.group.rotation.y = this.facing;
 
-    // victory hop + spin
+    // victory: jump + wave the front paws (not just a spin)
     if (this.celebrating) {
       const now = performance.now() * 0.001;
-      this.group.rotation.y = now * 2.2;
-      const hop = Math.abs(Math.sin(now * 3.2));
-      this.cat.model.position.y = hop * 0.5;
+      this.group.rotation.y = now * 1.1;                 // slow turn to show off
+      const hop = Math.abs(Math.sin(now * 3.4));
+      this.cat.model.position.y = hop * 0.75;            // clear jumps
       this.tilt.rotation.set(0, 0, 0);
-      this.tilt.scale.set(1 + (1 - hop) * 0.12, 1 - (1 - hop) * 0.12, 1 + (1 - hop) * 0.12);
-      this.cat.updateAnimation(dt, 2.4, true, false);
+      this.tilt.scale.set(1 + (1 - hop) * 0.14, 1 - (1 - hop) * 0.14, 1 + (1 - hop) * 0.14);
+      this.cat.updateAnimation(dt, { speed: 0, onGround: true, cheer: 1 });
       this.shadow.visible = true;
       this.shadow.position.set(this.group.position.x, 0.04, this.group.position.z);
       this.shadow.scale.setScalar(1); this.shadow.material.opacity = 0.34;
@@ -338,6 +338,9 @@ export class Player {
         const blocked = Math.max(0, 1 - Math.hypot(v.x, v.z) / (MOVE.speed * 0.55));
         this.tilt.rotation.x += 0.42 * blocked;   // strain-lean into the shove
       }
+      // attack posture: slide belly-low, flying-kick lunge back
+      if (this.sliding > 0) this.tilt.rotation.x += 0.6 * Math.min(1, this.sliding / ABIL.slideTime);
+      else if (this.dashAir && this.dashTimer > 0) this.tilt.rotation.x -= 0.45 * Math.min(1, this.dashTimer / ABIL.dashTime);
       sy = 1 - this.squash; sx = 1 + this.squash * 0.5;
     }
     if (this.grabbedBy) {
@@ -354,7 +357,12 @@ export class Player {
     const sp = Math.hypot(v.x, v.z);
     const rear = (this.grabbedBy || this.grabbing) ? 1 : 0;   // stand on hind legs to grab/struggle
     const flail = this.grabbedBy ? (0.4 + this.struggle * 0.6) : this.teeter > 0 ? 1 : this.knockdown > 0 ? 0.85 : this.tumble > 0 ? this.tumble : 0;
-    this.cat.updateAnimation(dt, sp, this.onGround, !!this.grabbedBy, flail, rear);
+    this.cat.updateAnimation(dt, {
+      speed: sp, onGround: this.onGround, grabbed: !!this.grabbedBy, flail, rear,
+      punch: this.punching > 0 ? Math.min(1, this.punching / 0.2) : 0,
+      kick:  (this.dashAir && this.dashTimer > 0) ? Math.min(1, this.dashTimer / ABIL.dashTime) : 0,
+      slide: this.sliding > 0 ? Math.min(1, this.sliding / ABIL.slideTime) : 0,
+    });
     // fallback stand-in has no clips → give it a little walk bob for life
     if (this.cat.fallback && this.tumble <= 0) {
       this.cat._bob += dt * (2 + sp * 2);

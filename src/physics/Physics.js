@@ -24,8 +24,10 @@ export class Physics {
   _buildArena() {
     const w = this.world;
     const pb = w.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(0, -0.6, 0));
+    // collider extends a bit past the visual rim so a cat standing at the edge
+    // is fully supported (its capsule doesn't tip off "near" the edge).
     w.createCollider(
-      RAPIER.ColliderDesc.cylinder(0.6, ARENA.radius)
+      RAPIER.ColliderDesc.cylinder(0.6, ARENA.radius + BODY.capRadius + 0.2)
         .setFriction(PHYSICS.platformFriction)
         .setRestitution(PHYSICS.platformRestitution),
       pb,

@@ -39,7 +39,7 @@ export class LobbyView {
     const r = this.renderer;
     const w = innerWidth, h = innerHeight;
     if (r.domElement.clientWidth !== w || r.domElement.clientHeight !== h) r.setSize(w, h, true);
-    for (const c of this.cats) c.updateAnimation(dt, 0.2, true, false);
+    for (const c of this.cats) c.updateAnimation(dt, { speed: 0.2, onGround: true });
 
     r.clear();
     r.setScissorTest(true);

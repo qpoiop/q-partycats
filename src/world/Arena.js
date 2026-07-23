@@ -60,11 +60,14 @@ export class Arena {
     deep.frustumCulled = false;
     this.group.add(deep);
 
-    // darkening abyss beneath the surface (cats sink into this)
+    // darkening abyss beneath the surface (cats sink into this). Its top must
+    // sit BELOW the sea plane so the solid sea disc occludes it from the play
+    // camera (otherwise the black walls poke up through the water as wedges);
+    // it only becomes visible once the camera follows a falling cat under.
     const abyss = new THREE.Mesh(
       new THREE.CylinderGeometry(70, 26, 120, 40, 1, true),
       new THREE.MeshBasicMaterial({ color: 0x03060f, side: THREE.DoubleSide, fog: false }));
-    abyss.position.y = ARENA.waterY - 60;
+    abyss.position.y = ARENA.waterY - 64;   // top = waterY − 4 (under the surface)
     abyss.frustumCulled = false;
     this.group.add(abyss);
     const abyssFloor = new THREE.Mesh(
@@ -79,26 +82,36 @@ export class Arena {
      is a thin strip, so we build the sea procedurally): one big blue disc at
      the surface with a gentle vertex-wave shimmer, calm and fully blue. */
   addWater(_gltf) {
-    const geo = new THREE.CircleGeometry(820, 128);
-    const mat = new THREE.MeshStandardMaterial({ color: 0x2f7ec4, roughness: 0.3, metalness: 0.2 });
+    // Dense enough grid that the swell has vertices to move (a CircleGeometry
+    // fan is too sparse at the rim); the ring geometry gives even resolution.
+    const geo = new THREE.RingGeometry(0, 820, 220, 40);
+    const mat = new THREE.MeshStandardMaterial({ color: 0x2f7ec4, roughness: 0.34, metalness: 0.25 });
+    // Wave field shared by the vertex displacement AND the analytic normal, so
+    // crests/troughs actually catch the light (flat normals = flat blue).
+    const WAVE = `
+      float _t = uTime;
+      float _a = position.x * 0.05 + _t * 1.3;
+      float _b = position.y * 0.062 - _t * 1.05;
+      float _c = (position.x + position.y) * 0.11 + _t * 1.9;
+      float _w  = sin(_a) * 0.62 + cos(_b) * 0.5 + sin(_c) * 0.32;
+      float _dx = cos(_a) * 0.05 * 0.62 + cos(_c) * 0.11 * 0.32;
+      float _dy = -sin(_b) * 0.062 * 0.5 + cos(_c) * 0.11 * 0.32;`;
+    const AMP = 2.6;
     mat.onBeforeCompile = (sh) => {
       sh.uniforms.uTime = { value: 0 };
       this._seaU = sh.uniforms.uTime;
-      sh.vertexShader = 'uniform float uTime;\nvarying float vWave;\n' + sh.vertexShader.replace(
-        '#include <begin_vertex>',
-        `#include <begin_vertex>
-         float w = sin(position.x * 0.04 + uTime * 1.2) * 0.6
-                 + cos(position.y * 0.05 - uTime * 1.0) * 0.5
-                 + sin((position.x + position.y) * 0.09 + uTime * 1.7) * 0.3;
-         vWave = w;
-         transformed.z += w * 2.4;`,               // visible swell
-      );
-      // moving light/dark ripples + crest highlights so the motion actually reads
+      sh.vertexShader = 'uniform float uTime;\nvarying float vWave;\n' + sh.vertexShader
+        .replace('#include <beginnormal_vertex>', `${WAVE}
+          vec3 objectNormal = normalize(vec3(-_dx * ${AMP.toFixed(1)}, -_dy * ${AMP.toFixed(1)}, 1.0));
+          vWave = _w;`)
+        .replace('#include <begin_vertex>', `#include <begin_vertex>
+          transformed.z += _w * ${AMP.toFixed(1)};`);
+      // moving light/dark bands + foam crests reinforce the lit swell
       sh.fragmentShader = 'varying float vWave;\n' + sh.fragmentShader.replace(
         '#include <color_fragment>',
         `#include <color_fragment>
-         diffuseColor.rgb *= 0.78 + 0.38 * (vWave * 0.5 + 0.5);
-         diffuseColor.rgb += vec3(0.06, 0.13, 0.18) * smoothstep(0.75, 1.1, vWave);`,
+         diffuseColor.rgb *= 0.72 + 0.5 * (vWave * 0.5 + 0.5);
+         diffuseColor.rgb += vec3(0.10, 0.18, 0.22) * smoothstep(0.7, 1.25, vWave);`,
       );
     };
     const sea = new THREE.Mesh(geo, mat);
