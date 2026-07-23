@@ -343,18 +343,20 @@ export class Player {
       sy = 1 - this.squash; sx = 1 + this.squash * 0.5;
     }
     if (this.grabbedBy) {
-      // flail — amplitude scales with the struggle meter
-      const now = performance.now(), amp = 0.28 + this.struggle * 0.7;
-      this.tilt.rotation.z = Math.sin(now * 0.021) * 0.55 * amp;
-      this.tilt.rotation.x = Math.sin(now * 0.017) * 0.34 * amp;
+      // reared up on hind legs, struggling — sway + front-paw flail (in Cat)
+      const now = performance.now(), amp = 0.3 + this.struggle * 0.7;
+      this.tilt.rotation.x += (-0.95 - this.tilt.rotation.x) * Math.min(1, dt * 9);   // stand up
+      this.tilt.rotation.z = Math.sin(now * 0.02) * 0.5 * amp;
     } else if (this.grabbing) {
-      this.tilt.rotation.x += (-0.16 - this.tilt.rotation.x) * Math.min(1, dt * 6); // lean back holding weight
+      this.tilt.rotation.x += (-0.85 - this.tilt.rotation.x) * Math.min(1, dt * 9);   // stand up, holding
+      this.tilt.rotation.z += (0 - this.tilt.rotation.z) * Math.min(1, dt * 6);
     }
     this.tilt.scale.set(sx, sy, sx);
 
     const sp = Math.hypot(v.x, v.z);
-    const flail = this.teeter > 0 ? 1 : this.knockdown > 0 ? 0.85 : this.tumble > 0 ? this.tumble : this.grabbedBy ? 0.7 : 0;
-    this.cat.updateAnimation(dt, sp, this.onGround, !!this.grabbedBy, flail);
+    const rear = (this.grabbedBy || this.grabbing) ? 1 : 0;   // stand on hind legs to grab/struggle
+    const flail = this.grabbedBy ? (0.4 + this.struggle * 0.6) : this.teeter > 0 ? 1 : this.knockdown > 0 ? 0.85 : this.tumble > 0 ? this.tumble : 0;
+    this.cat.updateAnimation(dt, sp, this.onGround, !!this.grabbedBy, flail, rear);
     // fallback stand-in has no clips → give it a little walk bob for life
     if (this.cat.fallback && this.tumble <= 0) {
       this.cat._bob += dt * (2 + sp * 2);

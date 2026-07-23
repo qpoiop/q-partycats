@@ -33,11 +33,13 @@ export class Cat {
     this._bob = 0;
 
     // bone refs for procedural motion (the model IS rigged — use it)
-    this.legs = []; this.head = null; this.tail = [];
+    this.legs = []; this.frontLegs = []; this.backLegs = []; this.head = null;
     inner.traverse(o => {
       if (!o.isBone) return;
-      if (o.name.indexOf('fingers') === 0) this.legs.push(o);   // the 4 legs (root→paw)
-      else if (o.name === 'head1_019') this.head = o;
+      if (o.name.indexOf('fingers') === 0) {
+        this.legs.push(o);                              // the 4 legs (root→paw)
+        if (/F[LR]/.test(o.name)) this.frontLegs.push(o); else this.backLegs.push(o);
+      } else if (o.name === 'head1_019') this.head = o;
     });
     this._q = new THREE.Quaternion(); this._e = new THREE.Euler();
   }
@@ -93,7 +95,7 @@ export class Cat {
     holder.position.z += 0.4;
   }
 
-  updateAnimation(dt, speed, onGround, grabbed, flail = 0) {
+  updateAnimation(dt, speed, onGround, grabbed, flail = 0, rear = 0) {
     this.mixer.update(dt);
     if (this.walk) {
       // cross-fade idle → walk by speed; airborne keeps a faint paddle
@@ -109,15 +111,23 @@ export class Cat {
     if (this.sit) {
       this.sit.setEffectiveWeight(onGround && speed < ANIM.idleSpeed && !grabbed && flail < 0.05 ? 0.7 : 0);
     }
+    const t = performance.now() * 0.001;
+    // rear up on the hind legs (grab / struggle) — front paws lift like hands
+    if (rear > 0.02) {
+      for (const leg of this.frontLegs) {
+        this._e.set(-1.25 * rear + Math.sin(t * 12) * 0.25 * rear, 0, 0);   // raise front paws (+ a little life)
+        leg.quaternion.multiply(this._q.setFromEuler(this._e));
+      }
+    }
     // procedural limb flail on TOP of the clip pose (knocked / teetering /
-    // grabbed) — the rigged legs kick and the head lolls, so it's not a rigid
-    // spinning blob. Applied after mixer.update so it layers over the clip.
+    // struggling) — the rigged legs kick and the head lolls.
     if (flail > 0.02 && this.legs.length) {
-      const t = performance.now() * 0.001;
-      for (let i = 0; i < this.legs.length; i++) {
+      // while reared up, only the FRONT paws flail (grappling); otherwise all four
+      const set = rear > 0.5 ? this.frontLegs : this.legs;
+      for (let i = 0; i < set.length; i++) {
         const ph = i * 1.9;
         this._e.set(Math.sin(t * 17 + ph) * 1.2 * flail, Math.sin(t * 11 + ph) * 0.5 * flail, Math.cos(t * 14 + ph) * 0.9 * flail);
-        this.legs[i].quaternion.multiply(this._q.setFromEuler(this._e));
+        set[i].quaternion.multiply(this._q.setFromEuler(this._e));
       }
       if (this.head) {
         this._e.set(Math.sin(t * 10) * 0.5 * flail, Math.sin(t * 8) * 0.5 * flail, 0);
