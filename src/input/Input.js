@@ -28,6 +28,7 @@ export class Input {
       if (this.game.state !== 'playing') return;
       const k = e.key.toLowerCase(); const wasDown = this.keys[k]; this.keys[k] = true;
       const p = this._local(); if (!p) return;
+      if (p.knockdown > 0) return;   // downed → wait to get up
       // grabbed → mash to escape (fresh presses only), dash = burst
       if (p.grabbedBy) {
         if (!wasDown) {
@@ -104,6 +105,7 @@ export class Input {
       b.addEventListener('pointerdown', e => {
         e.preventDefault(); e.stopPropagation();
         const p = this._local(); if (!p) return;
+        if (p.knockdown > 0) return;
         if (p.grabbedBy) { p.addStruggle(act === 'dash' ? GRAB.struggleGainDash : GRAB.struggleGainMash); return; }
         const a = this.game.actions;
         if (act === 'jump') a.jump(p);

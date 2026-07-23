@@ -13,6 +13,7 @@ export class Match {
     this.roundNum = 1;
     this.roundActive = false;
     this.roundEndTimer = 0;
+    this.roundTime = 0;
   }
 
   _spawnRingPos(i, total) { const a = (i / total) * 6.28 + 0.3, r = ARENA.radius * ARENA.spawnFactor; return { x: Math.cos(a) * r, z: Math.sin(a) * r }; }
@@ -45,7 +46,7 @@ export class Match {
       p.body.setTranslation(V(sp.x, BODY.restY, sp.z), true);
       p.body.setLinvel(V(0, 0, 0), true);
       p.alive = true; p.falling = false; p.dashCd = 0; p.dashTimer = 0; p.invuln = 0; p.slamming = false;
-      p.grabbing = null; p.grabbedBy = null; p.grip = 0; p.struggle = 0; p.tumble = 0; p.squash = 0; p.knockTimer = 0;
+      p.grabbing = null; p.grabbedBy = null; p.grip = 0; p.struggle = 0; p.tumble = 0; p.squash = 0; p.knockTimer = 0; p.knockdown = 0;
       p.facing = Math.atan2(-sp.x, -sp.z); p.faceTarget = p.facing;
       p.group.visible = true; p.moveMag = 0; p.moveDir.set(0, 0);
     });
@@ -62,6 +63,9 @@ export class Match {
 
   startRound() {
     this.placeAll();
+    this.roundTime = 0;
+    this.game.safeRadius = ARENA.radius;
+    this.game.arena.setDanger(ARENA.radius, false);
     this.game.ui.updateHUD();
     this.game.ui.roundTag(`ROUND ${this.roundNum} / ${this.game.config.rounds}`);
     this.roundActive = false;
@@ -81,7 +85,7 @@ export class Match {
     p.falling = true;
     p.tumble = 1; p.tumbleAxis.set(Math.random() - 0.5, 0.15, Math.random() - 0.5).normalize();
     this.game.fx.flash(0.3); this.game.fx.shake(0.6);
-    this.game.ui.showBanner(`${p.name} 아웃!`, p.css, 0.9);
+    this.game.ui.showBanner(p.isBot ? `${p.name} 탈락!` : '앗, 떨어졌다!', p.css, 0.9);
     this.game.ui.updateHUD();
     this._checkRoundEnd();
   }
@@ -112,6 +116,17 @@ export class Match {
   }
 
   update(dt) {
+    if (this.roundActive) {
+      this.roundTime += dt;
+      let r = ARENA.radius;
+      const over = this.roundTime - MATCH.sdTime;
+      if (over > 0) {
+        const prog = Math.min(1, over / MATCH.closeTime);
+        r = ARENA.radius - (ARENA.radius - MATCH.minSafe) * prog;
+      }
+      this.game.safeRadius = r;
+      this.game.arena.setDanger(r, over > 0);
+    }
     if (this.roundEndTimer > 0) {
       this.roundEndTimer -= dt;
       if (this.roundEndTimer <= 0) this._nextRoundOrEnd();

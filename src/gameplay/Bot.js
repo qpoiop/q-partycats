@@ -14,6 +14,7 @@ export class Bot {
   update(p, dt) {
     if (!p.alive) { p.moveMag = 0; return; }
     if (p.grabbedBy) { this._struggle(p, dt); return; }
+    if (p.knockdown > 0) { p.moveMag = 0; return; }   // downed → wait to get up
     const st = this.game.state;
     if (st === 'home' || st === 'lobby' || st === 'results') return this._ambient(p, dt);
     this._combat(p, dt);
@@ -50,6 +51,7 @@ export class Bot {
 
   _combat(p, dt) {
     p.botTimer -= dt;
+    const A = this.game.actions;
     const me = p.pos(), myD = Math.hypot(me.x, me.z);
     let tgt = null, td = 1e9;
     for (const o of this.game.players) {
@@ -57,24 +59,25 @@ export class Bot {
       const op = o.pos(), d = Math.hypot(op.x - me.x, op.z - me.z);
       if (d < td) { td = d; tgt = o; }
     }
-    let gx = 0, gz = 0;
-    const nearEdge = myD > ARENA.radius - 2.4;
-    if (nearEdge) { gx = -me.x; gz = -me.z; }
-    else if (tgt) { const tp = tgt.pos(); gx = tp.x - me.x; gz = tp.z - me.z; }
+    const nearEdge = myD > ARENA.radius - 2.2;
+    let gx, gz;
+    if (nearEdge) { gx = -me.x; gz = -me.z; }              // recover from the edge
+    else if (tgt) { const tp = tgt.pos(); gx = tp.x - me.x; gz = tp.z - me.z; }  // hunt
+    else { gx = Math.cos(p.wanderA); gz = Math.sin(p.wanderA); p.wanderA += (Math.random() - 0.5) * 0.4; }
     const gl = Math.hypot(gx, gz) || 1;
-    p.wanderA += (Math.random() - 0.5) * 0.35;
-    p.moveDir.set(gx / gl + Math.cos(p.wanderA) * 0.18, gz / gl + Math.sin(p.wanderA) * 0.18).normalize();
-    p.moveMag = nearEdge ? 0.9 : 0.72;
+    p.moveDir.set(gx / gl, gz / gl);
+    p.moveMag = nearEdge ? 1 : 0.95;                        // commit to the chase
+    p.faceTarget = Math.atan2(gx, gz);
 
-    if (p.botTimer <= 0 && tgt) {
-      p.botTimer = 1.6 + Math.random() * 1.6;
-      const tp = tgt.pos(), tgtD = Math.hypot(tp.x, tp.z);
-      if (td < 2.1 && tgtD > myD + 1.1 && !nearEdge) {
-        if (td < 1.4 && p.grabCd <= 0 && Math.random() < 0.22) this.game.actions.grab(p);
-        else if (p.dashCd <= 0 && Math.random() < 0.5) { p.facing = Math.atan2(gx, gz); p.faceTarget = p.facing; this.game.actions.dash(p); }
-      } else if (td < 3.0 && p.onGround && Math.random() < 0.08) this.game.actions.jump(p);
-      else if (!p.onGround && !p.slamming && td < ABIL.slamRadius && Math.random() < 0.22) this.game.actions.slam(p);
-      if (p.grabbing) { const a = Math.atan2(me.x, me.z); p.facing = a; p.faceTarget = a; this.game.actions.throw(p); }
+    if (p.botTimer <= 0 && tgt && !nearEdge) {
+      p.botTimer = 0.5 + Math.random() * 0.6;               // decide often
+      const tp = tgt.pos();
+      // if holding someone, hurl them straight off the nearest edge
+      if (p.grabbing) { const a = Math.atan2(tp.x, tp.z); p.facing = a; p.faceTarget = a; A.throw(p); return; }
+      p.facing = Math.atan2(tp.x - me.x, tp.z - me.z);       // aim at the target
+      if (td < 1.7 && p.grabCd <= 0 && Math.random() < 0.55) A.grab(p);      // grab up close
+      else if (td < 5.5 && p.dashCd <= 0) A.dash(p);                          // dash-shove into them
+      else if (!p.onGround && !p.slamming && td < ABIL.slamRadius) A.slam(p);
     }
   }
 }

@@ -16,7 +16,7 @@ export class Actions {
   }
 
   jump(p) {
-    if (p.grabbedBy || !p.alive || !p.onGround) return;
+    if (p.grabbedBy || p.knockdown > 0 || !p.alive || !p.onGround) return;
     const v = p.vel();
     p.body.setLinvel(V(v.x, ABIL.jumpVel, v.z), true);
     p.onGround = false; p.squash = ABIL.jumpSquash;
@@ -24,7 +24,7 @@ export class Actions {
   }
 
   dash(p) {
-    if (p.grabbedBy || !p.alive) return;
+    if (p.grabbedBy || p.knockdown > 0 || !p.alive) return;
     if (p.grabbing) { this.throw(p); return; }
     if (p.dashCd > 0) return;
     p.dashCd = ABIL.dashCd;
@@ -51,7 +51,7 @@ export class Actions {
   }
 
   slam(p) {
-    if (p.grabbedBy || p.grabbing || !p.alive) return;
+    if (p.grabbedBy || p.knockdown > 0 || p.grabbing || !p.alive) return;
     if (!p.onGround && !p.slamming) {
       p.slamming = true;
       const v = p.vel();
@@ -80,7 +80,7 @@ export class Actions {
   }
 
   grab(p) {
-    if (p.grabbedBy || !p.alive) return;
+    if (p.grabbedBy || p.knockdown > 0 || !p.alive) return;
     if (p.grabbing) { this.throw(p); return; }
     if (p.grabCd > 0) return;
     const dir = p.faceVec(), me = p.pos();

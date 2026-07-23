@@ -31,6 +31,7 @@ export class Game {
     this.humanColor = 0;
     this.thumbs = {};
     this.state = 'boot';
+    this.safeRadius = ARENA.radius;   // sudden-death storm zone (shrinks late round)
 
     // render core (sync, no assets needed)
     this.canvas = document.getElementById('c');

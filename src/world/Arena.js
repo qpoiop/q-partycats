@@ -24,6 +24,21 @@ export class Arena {
     this._buildPlatform();
     this._buildDecor();
     this._buildMotes();
+    this._buildDangerRing();
+  }
+
+  _buildDangerRing() {
+    const m = new THREE.Mesh(
+      new THREE.TorusGeometry(1, 0.04, 8, 80),
+      new THREE.MeshBasicMaterial({ color: 0xff5230, transparent: true, opacity: 0.9, depthWrite: false, blending: THREE.AdditiveBlending }));
+    m.rotation.x = -Math.PI / 2; m.position.y = 0.18; m.visible = false; m.frustumCulled = false;
+    this._danger = m; this.group.add(m);
+  }
+
+  /** Sudden-death storm ring at the shrinking safe radius. */
+  setDanger(radius, active) {
+    const m = this._danger; m.visible = active;
+    if (active) m.scale.set(radius, radius, 1);
   }
 
   _buildSky() {
@@ -237,6 +252,7 @@ export class Arena {
 
   update(dt) {
     for (const m of this._mixers) m.update(dt);
+    if (this._danger.visible) this._danger.material.opacity = 0.55 + 0.4 * Math.sin(performance.now() * 0.008);
     const N = this._moteN, pos = this._motePos, vel = this._moteVel;
     for (let i = 0; i < N; i++) {
       pos[i * 3 + 1] += vel[i] * dt;

@@ -34,18 +34,18 @@ export const ARENA = {
   doomY: -2.5,           // drop past the edge → out (round resolves immediately)
   menuKillY: -6,         // attract mode: respawn instead of KO
   // sea + underwater abyss (fall = splash at surface, then sink into the dark)
-  waterY: -20,           // sea surface; the island visibly floats above it
+  waterY: -6,            // sea surface right below the island → clearly visible around it
   sinkDrag: 2.6,         // vertical damping once submerged → ~3-4s sink
-  darkenRange: 26,       // depth (below waterY) over which the screen fades to black
-  hideY: -50,            // body removed here, deep in the abyss
+  darkenRange: 22,       // depth (below waterY) over which the screen fades to black
+  hideY: -42,            // body removed here, deep in the abyss
 };
 
 // ---------- character physical body ----------
 export const BODY = {
-  capHalfHeight: 0.44,
-  capRadius: 0.6,
+  capHalfHeight: 0.5,
+  capRadius: 0.66,
   density: 1.1,
-  visualHeight: 3.1,   // bigger, readable characters
+  visualHeight: 3.7,   // bigger, readable characters
   linearDamping: 0.2,
 };
 BODY.footOffset = BODY.capHalfHeight + BODY.capRadius; // center → feet
@@ -77,6 +77,7 @@ export const MOVE = {
   turnRateGround: 16,  // facing lerp rate (rad/s-ish)
   turnRateAir: 8,
   knockWindow: 0.34,   // s of no-steer after taking a hit (keeps knockback juicy)
+  airDrag: 1.7,        // horizontal drag/s while airborne & knocked → arc down, don't fly straight
 };
 
 // ---------- abilities (expressed as target velocities, intuitive) ----------
@@ -89,16 +90,29 @@ export const ABIL = {
   dashAirLift: 2.6,
   dashInvuln: 0.45,
   dashTime: 0.4,       // active window (contact = strike)
-  dashStrikeGround: 6.5,
-  dashStrikeAir: 12.5,
-  dashStrikeAirLift: 4.6,
+  dashStrikeGround: 4.2,   // moderate shove (was 6.5 → flew too far)
+  dashStrikeAir: 6.5,      // flying-kick punch (was 12.5)
+  dashStrikeAirLift: 5.2,  // …with a healthy pop up (arc, not a flat line)
   slamDownVel: 17,
   slamRadius: 4.6,
-  slamKnockBase: 6,
-  slamKnockScale: 16,
-  slamKnockLift: 8.0,
-  throwVel: 13,
-  throwLift: 6,
+  slamKnockBase: 3.5,
+  slamKnockScale: 9,
+  slamKnockLift: 7.0,
+  throwVel: 8.5,           // arc throw (was 13, too far/flat)
+  throwLift: 7.0,
+};
+
+/* ---------- KNOCKDOWN / STAGGER ----------
+   A solid hit knocks a cat down: it tumbles, can't act, and takes time to
+   get up. This is what makes hits *matter* (and stops knocked cats from
+   fighting the steering controller → no more contact jitter). Duration
+   scales with the impact velocity. */
+export const KNOCKDOWN = {
+  threshold: 4.0,   // impact Δspeed (m/s) above which a cat is knocked down
+  minTime: 0.6,
+  maxTime: 1.4,
+  perSpeed: 0.06,   // extra downtime per m/s of impact over threshold
+  getup: 0.35,      // brief rise-and-vulnerable window as it stands
 };
 
 /* ---------- GRAB (Party-Animals-style tug-of-war) ----------
@@ -152,8 +166,8 @@ export const RENDER = {
   near: 0.3,
   far: 500,
   fogColor: 0xbfe0ff,   // matches sky horizon
-  fogNear: 60,          // clear across the whole arena…
-  fogFar: 320,          // …only the far skyline hazes
+  fogNear: 90,          // clear across the whole arena…
+  fogFar: 520,          // …only the far skyline hazes (sea reads blue, not grey)
   abyssColor: 0x05060c, // the void the arena floats above
   pixelRatioCap: 2,
   bloom: { strength: 0.42, radius: 0.6, threshold: 0.9 },
@@ -172,10 +186,10 @@ export const CAMERA = {
   framingMargin: { menu: 0.82, play: 0.66 },
   minDist: 12,
   maxDist: 64,
-  menuElevation: 0.5,
-  playElevation: 0.62,
+  menuElevation: 0.42,
+  playElevation: 0.44,   // low angle → sea/horizon shows beyond the island
   fallElevation: 0.28,   // tilt down to watch the plunge into the sea
-  followLerp: 3.2,
+  followLerp: 2.4,       // smoother follow → fast-flung cats don't jerk the camera
   followClamp: 5.5,      // how far the framing centroid may drift from centre
   menuSpin: 0.024,
 };
@@ -187,4 +201,9 @@ export const MATCH = {
   countOptions: [2, 3, 4],
   roundOptions: [1, 3, 5],
   roundEndDelay: 2.4,
+  // sudden death: after sdTime the safe zone shrinks over closeTime, shoving
+  // stragglers off the island → every round resolves (outermost falls first).
+  sdTime: 16,
+  closeTime: 9,
+  minSafe: 2.2,
 };

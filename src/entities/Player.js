@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { BODY, MOVE, ANIM, GRAB } from '../config.js';
+import { BODY, MOVE, ANIM, GRAB, KNOCKDOWN } from '../config.js';
 import { Cat } from './Cat.js';
 
 const FOOT = BODY.footOffset;
@@ -58,6 +58,7 @@ export class Player {
     this.grip = 0;        // grabber: remaining grip (drains → break)
     this.struggle = 0;    // victim: escape meter (fills by mashing → break)
     this.tumble = 0; this.tumbleAxis = new THREE.Vector3(1, 0, 0); this.squash = 0;
+    this.knockdown = 0;   // >0 = downed: can't act, must get up
     this.falling = false; this._splashed = false;
     this.botTimer = 0; this.wanderA = Math.random() * 6.28;
   }
@@ -74,7 +75,16 @@ export class Player {
     this.body.applyImpulse(V(ix, iy, iz), true);
     this.knockTimer = MOVE.knockWindow;
     this.onGround = false;
-    if (tumble > 0) {
+    const impact = Math.hypot(ix, iz) / this.mass();   // horizontal Δspeed
+    if (impact >= KNOCKDOWN.threshold) {
+      // solid hit → knocked down (tumbles, can't act, gets up after a delay)
+      this.knockdown = Math.min(KNOCKDOWN.maxTime, KNOCKDOWN.minTime + (impact - KNOCKDOWN.threshold) * KNOCKDOWN.perSpeed);
+      this.tumble = 1;
+      if (axis) this.tumbleAxis.copy(axis).normalize();
+      else this.tumbleAxis.set(iz, 0.2, -ix).normalize();
+      if (this.grabbing) this.game.actions.releaseGrab(this);
+      if (this.grabbedBy) this.game.actions.releaseGrab(this.grabbedBy);
+    } else if (tumble > 0) {
       this.tumble = tumble;
       if (axis) this.tumbleAxis.copy(axis).normalize();
     }
@@ -97,20 +107,43 @@ export class Player {
 
     this.onGround = this.game.physics.grounded(this.body, FOOT + 0.18);
 
+    // sudden-death storm: shoved outward if caught outside the shrinking safe zone
+    if (this.game.state === 'playing' && this.game.safeRadius < this.game.ARENA.radius) {
+      const t = this.pos(), d = Math.hypot(t.x, t.z), over = d - this.game.safeRadius;
+      if (over > 0) {
+        const nx = t.x / (d || 1), nz = t.z / (d || 1), v = this.vel();
+        const target = 3 + over * 3, outV = v.x * nx + v.z * nz;
+        if (outV < target) { const add = target - outV; this.body.setLinvel(V(v.x + nx * add, v.y, v.z + nz * add), true); }
+      }
+    }
+
     // timers
     if (this.knockTimer > 0) this.knockTimer -= dt;
     if (this.dashCd > 0) this.dashCd -= dt;
     if (this.dashTimer > 0) this.dashTimer -= dt;
     if (this.invuln > 0) this.invuln -= dt;
     if (this.grabCd > 0) this.grabCd -= dt;
+    if (this.knockdown > 0) this.knockdown -= dt;
     // grabber: grip drains over time, faster while the victim struggles
     if (this.grabbing) {
       this.grip -= (GRAB.gripDrainBase + GRAB.gripDrainStruggle * this.grabbing.struggle) * dt;
       if (this.grip <= 0 || !this.grabbing.alive) { this.game.actions.breakFree(this); }
     }
 
-    const steerable = this.knockTimer <= 0 && this.dashTimer <= 0 && !this.slamming;
+    // air drag on a flung cat → it arcs down and lands instead of flying straight
+    if (!this.onGround && (this.knockTimer > 0 || this.knockdown > 0)) {
+      const v = this.vel(), k = Math.max(0, 1 - MOVE.airDrag * dt);
+      this.body.setLinvel(V(v.x * k, v.y, v.z * k), true);
+    }
+
+    const downed = this.knockdown > 0;
+    const steerable = !downed && this.knockTimer <= 0 && this.dashTimer <= 0 && !this.slamming;
     if (steerable) this._steer(dt);
+    else if (downed && this.onGround) {
+      // lying on the ground → grind to a stop (no steering fighting contacts)
+      const v = this.vel(), sp = Math.hypot(v.x, v.z);
+      if (sp > 0.01) { const dec = Math.min(sp, MOVE.frictionDecel * 0.7 * dt); const k = (sp - dec) / sp; this.body.setLinvel(V(v.x * k, v.y, v.z * k), true); }
+    }
 
     if (this.dashTimer > 0) {
       if (Math.random() < 0.5) this.game.fx.dust(this.pos(), this.hex, 2, 0.4);
@@ -237,7 +270,12 @@ export class Player {
 
     this.squash += (0 - this.squash) * Math.min(1, dt * 8);
     let sx = 1, sy = 1;
-    if (this.tumble > 0) {
+    if (this.knockdown > 0) {
+      // downed → lie on the ground (getup roll plays when knockdown ends)
+      this.tilt.rotation.set(0, 0, 0);
+      this.tilt.rotateOnAxis(this.tumbleAxis, Math.PI * 0.5);
+      this.tumble = 1;
+    } else if (this.tumble > 0) {
       this.tumble = Math.max(0, this.tumble - dt * 1.1);
       this.tilt.rotation.set(0, 0, 0);
       this.tilt.rotateOnAxis(this.tumbleAxis, (1 - this.tumble) * Math.PI * 3.4);
