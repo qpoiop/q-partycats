@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { BODY, MOVE, ANIM, GRAB, KNOCKDOWN } from '../config.js';
+import { BODY, MOVE, ANIM, GRAB, KNOCKDOWN, EDGE } from '../config.js';
 import { Cat } from './Cat.js';
 
 const FOOT = BODY.footOffset;
@@ -61,6 +61,7 @@ export class Player {
     this.struggle = 0;    // victim: escape meter (fills by mashing → break)
     this.tumble = 0; this.tumbleAxis = new THREE.Vector3(1, 0, 0); this.squash = 0;
     this.knockdown = 0;   // >0 = downed: can't act, must get up
+    this.teeter = 0; this._teetered = false;   // hanging/flailing at the ledge
     this.falling = false; this._splashed = false; this.celebrating = false;
     this.botTimer = 0; this.wanderA = Math.random() * 6.28;
   }
@@ -106,6 +107,18 @@ export class Player {
 
     // being carried: physical spring pull toward the grabber's hold point
     if (this.grabbedBy) { this._carriedTick(dt); return; }
+
+    // teetering on the lip: hang, flail, scramble inward (may recover)
+    if (this.teeter > 0) {
+      this.teeter -= dt;
+      const t = this.pos(), v = this.vel(), d = Math.hypot(t.x, t.z) || 1;
+      const nx = -t.x / d, nz = -t.z / d;
+      this.body.setLinvel(V(v.x * 0.55 + nx * EDGE.teeterRecover * dt * 6, Math.max(v.y, -1.6), v.z * 0.55 + nz * EDGE.teeterRecover * dt * 6), true);
+      this.onGround = false;
+      if (this.knockTimer > 0) this.knockTimer -= dt;
+      if (d < this.game.ARENA.radius - 0.3) this.teeter = 0;   // scrambled back to safety
+      return;
+    }
 
     this.onGround = this.game.physics.grounded(this.body, FOOT + 0.18);
 
@@ -237,9 +250,18 @@ export class Player {
     if (menu) {
       if (t.y < A.menuKillY) { this.game.match.respawnMenu(this); return; }
     } else {
+      // catch the ledge: drifting off slowly → teeter (a hard shove skips it)
+      if (this.alive && this.teeter <= 0 && !this._teetered && !this.falling && t.y > A.doomY) {
+        const d = Math.hypot(t.x, t.z);
+        if (d > A.radius && d < A.radius + EDGE.teeterBand) {
+          const v = this.vel(), outV = (v.x * t.x + v.z * t.z) / (d || 1);
+          if (outV < EDGE.teeterOutSpeed && v.y > -7) { this.teeter = EDGE.teeterTime; this._teetered = true; this.game.fx.dust(t, this.hex, 6, 0.5); }
+        }
+      }
+      if (this.alive && Math.hypot(t.x, t.z) < A.radius - 2) this._teetered = false;   // safely inside → re-armed
       // combat: doomed the instant we drop past the platform edge — round
       // resolves now, but the body keeps plunging into the abyss for drama.
-      if (this.alive && t.y < A.doomY) { this.game.match.eliminate(this); }
+      if (this.alive && this.teeter <= 0 && t.y < A.doomY) { this.game.match.eliminate(this); }
       if (!this.alive && this.falling) {
         if (!this._splashed && t.y < A.waterY) { this._splashed = true; this.game.fx.splash(t); }
         if (t.y < A.waterY) {
@@ -287,15 +309,19 @@ export class Player {
 
     this.squash += (0 - this.squash) * Math.min(1, dt * 8);
     let sx = 1, sy = 1;
-    if (this.knockdown > 0) {
+    if (this.teeter > 0) {
+      // hanging on the lip → flail
+      const now = performance.now() * 0.001;
+      this.tilt.rotation.set(Math.sin(now * 22) * 0.3, 0, Math.sin(now * 30) * 0.5);
+    } else if (this.knockdown > 0) {
       // downed → lie on the ground (getup roll plays when knockdown ends)
       this.tilt.rotation.set(0, 0, 0);
       this.tilt.rotateOnAxis(this.tumbleAxis, Math.PI * 0.5);
       this.tumble = 1;
     } else if (this.tumble > 0) {
-      this.tumble = Math.max(0, this.tumble - dt * 1.1);
+      this.tumble = Math.max(0, this.tumble - dt * 2.2);   // quicker, less floaty
       this.tilt.rotation.set(0, 0, 0);
-      this.tilt.rotateOnAxis(this.tumbleAxis, (1 - this.tumble) * Math.PI * 3.4);
+      this.tilt.rotateOnAxis(this.tumbleAxis, (1 - this.tumble) * Math.PI * 2.0);  // fewer spins
     } else {
       const lvx = Math.cos(this.facing) * v.x - Math.sin(this.facing) * v.z;
       const lvz = Math.sin(this.facing) * v.x + Math.cos(this.facing) * v.z;

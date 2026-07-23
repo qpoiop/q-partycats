@@ -70,13 +70,13 @@ export class Bot {
     p.faceTarget = Math.atan2(gx, gz);
 
     if (p.botTimer <= 0 && tgt && !nearEdge) {
-      p.botTimer = 0.8 + Math.random() * 0.9;               // less spammy
+      p.botTimer = 0.6 + Math.random() * 0.7;
       const tp = tgt.pos();
       // if holding someone, hurl them straight off the nearest edge
       if (p.grabbing) { const a = Math.atan2(tp.x, tp.z); p.facing = a; p.faceTarget = a; A.throw(p); return; }
       p.facing = Math.atan2(tp.x - me.x, tp.z - me.z);       // aim at the target
-      if (td < 1.6 && p.grabCd <= 0 && Math.random() < 0.35) A.grab(p);       // grab up close
-      else if (td < 3.8 && p.dashCd <= 0 && Math.random() < 0.7) A.dash(p);   // dash-shove
+      if (td < 1.7 && p.grabCd <= 0 && Math.random() < 0.45) A.grab(p);       // grab up close
+      else if (td < 4.6 && p.dashCd <= 0 && Math.random() < 0.85) A.dash(p);  // dash-shove
       else if (!p.onGround && !p.slamming && td < ABIL.slamRadius) A.slam(p);
     }
   }

@@ -27,7 +27,7 @@ export const ASSETS = {
    One radius R drives everything: spawns, decoration, and camera framing
    are all expressed as ratios of R so nothing is hand-tuned in isolation. */
 export const ARENA = {
-  radius: 13.0,          // platform radius — the single source of scale
+  radius: 17.0,          // platform radius — the single source of scale (bigger arena)
   rimHeight: -0.02,
   spawnFactor: 0.5,      // cats spawn at R*this (central, clearly visible)
   decorRingFactor: 0.97, // trees live on the rim ring (R*this) → play area stays clear
@@ -58,7 +58,7 @@ export const PHYSICS = {
   maxSubsteps: 5,
   platformFriction: 0.85,
   platformRestitution: 0.04,
-  bodyFriction: 0.4,
+  bodyFriction: 0.85,     // cats grip when pressed together → a grinding shove, not a slide
   bodyRestitution: 0.0,   // cats don't bounce off each other → no contact jitter
 };
 
@@ -77,7 +77,7 @@ export const MOVE = {
   turnRateGround: 9,   // facing lerp rate — smooth, not whip-snappy
   turnRateAir: 5,
   knockWindow: 0.34,   // s of no-steer after taking a hit (keeps knockback juicy)
-  airDrag: 1.7,        // horizontal drag/s while airborne & knocked → arc down, don't fly straight
+  airDrag: 0.9,        // slight horizontal drag while knocked (was 1.7 → felt floaty/hangy)
 };
 
 // ---------- abilities (expressed as target velocities, intuitive) ----------
@@ -92,14 +92,25 @@ export const ABIL = {
   dashTime: 0.4,       // active window (contact = strike)
   dashStrikeGround: 3.0,   // gentle shove — one hit shouldn't mean instant death
   dashStrikeAir: 5.0,      // flying-kick punch
-  dashStrikeAirLift: 5.0,  // …with a pop up (arc, not a flat line)
+  dashStrikeAirLift: 3.0,  // small pop (was 5 → too floaty)
   slamDownVel: 17,
   slamRadius: 4.4,
   slamKnockBase: 3.0,
   slamKnockScale: 7,
-  slamKnockLift: 6.5,
-  throwVel: 7.0,           // arc throw
-  throwLift: 7.0,
+  slamKnockLift: 4.5,
+  throwVel: 7.5,
+  throwLift: 4.5,          // low arc (was 7 → floated too high)
+};
+
+/* ---------- EDGE TEETER ----------
+   Going off the lip slowly shouldn't be a smooth slide into the void — the
+   cat catches the ledge, hangs and flails for a beat (and may scramble back)
+   before it drops. A hard shove (high outward speed) skips this = clean KO. */
+export const EDGE = {
+  teeterTime: 0.5,      // hang/flail duration at the lip
+  teeterOutSpeed: 5.0,  // outward speed above this → launched clean off (no teeter)
+  teeterBand: 1.5,      // how far past the rim the teeter can trigger
+  teeterRecover: 0.8,   // weak inward scramble — a dramatic hang that usually still drops
 };
 
 /* ---------- KNOCKDOWN / STAGGER ----------

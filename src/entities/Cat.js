@@ -79,6 +79,9 @@ export class Cat {
     holder.position.x -= c.x;
     holder.position.z -= c.z;
     holder.position.y -= box.min.y;
+    // the idle/sit pose shifts the body ~0.4 behind the bind centre → nudge it
+    // forward so the body sits over the selection ring & shadow.
+    holder.position.z += 0.4;
   }
 
   updateAnimation(dt, speed, onGround, grabbed) {

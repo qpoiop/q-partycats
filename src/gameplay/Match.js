@@ -71,7 +71,7 @@ export class Match {
       p.body.setTranslation(V(sp.x, BODY.restY, sp.z), true);
       p.body.setLinvel(V(0, 0, 0), true);
       p.alive = true; p.falling = false; p.dashCd = 0; p.dashTimer = 0; p.invuln = 0; p.slamming = false;
-      p.grabbing = null; p.grabbedBy = null; p.grip = 0; p.struggle = 0; p.tumble = 0; p.squash = 0; p.knockTimer = 0; p.knockdown = 0;
+      p.grabbing = null; p.grabbedBy = null; p.grip = 0; p.struggle = 0; p.tumble = 0; p.squash = 0; p.knockTimer = 0; p.knockdown = 0; p.teeter = 0; p._teetered = false;
       p.facing = Math.atan2(-sp.x, -sp.z); p.faceTarget = p.facing;
       p.group.visible = true; p.moveMag = 0; p.moveDir.set(0, 0);
     });
