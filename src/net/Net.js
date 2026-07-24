@@ -34,7 +34,7 @@ export class Net {
 
   _url() {
     const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-    const q = new URLSearchParams({ name: this.opts.name, color: String(this.opts.color) });
+    const q = new URLSearchParams({ name: this.opts.name, color: String(this.opts.color), animal: String(this.opts.animal || 0) });
     if (this.token) q.set('token', this.token);   // reconnect → reclaim slot
     return `${proto}://${location.host}/api/room/${this.code}/ws?${q}`;
   }
@@ -85,6 +85,8 @@ export class Net {
 
   // lobby actions
   setColor(color) { this.opts.color = color; this.send({ t: 'setColor', color }); }
+  setAnimal(animal) { this.opts.animal = animal; this.send({ t: 'setAnimal', animal }); }
+  setReady(ready) { this.send({ t: 'setReady', ready }); }
   setName(name) { this.opts.name = name; this.send({ t: 'setName', name }); }
   setConfig(count, rounds) { this.send({ t: 'config', count, rounds }); }
   start() { this.send({ t: 'start' }); }

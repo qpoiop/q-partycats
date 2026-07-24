@@ -45,6 +45,7 @@ export class Room {
     this._accept(server, {
       name: (url.searchParams.get('name') || '냥').slice(0, 12),
       color: parseInt(url.searchParams.get('color') || '0', 10) || 0,
+      animal: parseInt(url.searchParams.get('animal') || '0', 10) || 0,
       token: url.searchParams.get('token') || null,   // present → reconnect attempt
     });
     return new Response(null, { status: 101, webSocket: client });
@@ -63,7 +64,8 @@ export class Room {
     } else {
       slotIdx = this._freeSlot();
       if (slotIdx === null) { this._send(ws, { t: 'full' }); ws.close(1013, 'room full'); return; }
-      entry = { id: uid(), token: uid(), name: opts.name, color: this._pickColor(opts.color), ws, alive: true, lastPong: now(), dropAt: 0, slot: slotIdx };
+      const wantAnimal = (opts.animal >= 0 && opts.animal < 6) ? opts.animal : slotIdx % 6;
+      entry = { id: uid(), token: uid(), name: opts.name, color: this._pickColor(opts.color), animal: wantAnimal, ready: false, ws, alive: true, lastPong: now(), dropAt: 0, slot: slotIdx };
       this.slots.set(slotIdx, entry);
       if (!this.hostId) this.hostId = entry.id;
     }
@@ -88,9 +90,11 @@ export class Room {
       case 'pong': entry.alive = true; break;
       case 'ping': this._send(entry.ws, { t: 'pong' }); break;
       case 'setColor': if (this._colorFree(msg.color, entry)) { entry.color = msg.color; this._broadcastPresence(); } break;
+      case 'setAnimal': { const a = msg.animal | 0; if (a >= 0 && a < 6) { entry.animal = a; this._broadcastPresence(); } break; }
+      case 'setReady': entry.ready = !!msg.ready; this._broadcastPresence(); break;
       case 'setName': entry.name = String(msg.name || '').slice(0, 12) || entry.name; this._broadcastPresence(); break;
       case 'config': if (entry.id === this.hostId) { this.config = { count: msg.count | 0 || this.config.count, rounds: msg.rounds | 0 || this.config.rounds }; this._broadcastPresence(); } break;
-      case 'start': if (entry.id === this.hostId && this.phase === 'lobby') { this.phase = 'playing'; this._broadcast({ t: 'start', config: this.config, roster: this._roster(), hostSlot: this._slotOf(this.hostId) }); } break;
+      case 'start': if (entry.id === this.hostId && this.phase === 'lobby' && this._allReady()) { this.phase = 'playing'; this._broadcast({ t: 'start', config: this.config, roster: this._roster(), hostSlot: this._slotOf(this.hostId) }); } break;
       case 'lobby': if (entry.id === this.hostId) { this.phase = 'lobby'; this._broadcast({ t: 'toLobby' }); } break;
       // host-authoritative relay: inputs go to the host, snapshots go to everyone else
       case 'input': { const h = this._hostWs(); if (h) this._send(h, { t: 'input', slot: entry.slot, input: msg.input }); break; }
@@ -138,7 +142,8 @@ export class Room {
   // ---- helpers ----
   _hostWs() { for (const e of this.slots.values()) if (e.id === this.hostId) return e.ws; return null; }
   _slotOf(id) { for (const [i, e] of this.slots) if (e.id === id) return i; return -1; }
-  _roster() { return [...this.slots.entries()].sort((a, b) => a[0] - b[0]).map(([slot, e]) => ({ slot, color: e.color, name: e.name, connected: !!e.ws })); }
+  _roster() { return [...this.slots.entries()].sort((a, b) => a[0] - b[0]).map(([slot, e]) => ({ slot, color: e.color, animal: e.animal, name: e.name, connected: !!e.ws })); }
+  _allReady() { let any = false; for (const e of this.slots.values()) { if (!e.ws) continue; any = true; if (!e.ready) return false; } return any; }
   _freeSlot() { for (let i = 0; i < MAX_PLAYERS; i++) if (!this.slots.has(i)) return i; return null; }
   _anyId() { for (const e of this.slots.values()) return e.id; return null; }
   _colorFree(c, self) { for (const e of this.slots.values()) if (e !== self && e.color === c) return false; return true; }
@@ -147,7 +152,7 @@ export class Room {
   _presence() {
     const players = [...this.slots.entries()]
       .sort((a, b) => a[0] - b[0])
-      .map(([slot, e]) => ({ slot, id: e.id, name: e.name, color: e.color, connected: !!e.ws, host: e.id === this.hostId }));
+      .map(([slot, e]) => ({ slot, id: e.id, name: e.name, color: e.color, animal: e.animal, ready: e.ready, connected: !!e.ws, host: e.id === this.hostId }));
     return { t: 'presence', code: this.code, phase: this.phase, config: this.config, host: this.hostId, players };
   }
   _broadcastPresence() { this._broadcast(this._presence()); }

@@ -101,40 +101,75 @@ export class UI {
     });
     this._lobbyCards = [...slots.querySelectorAll('.portrait')].map((el, i) => ({ el, animalId: roster[i].animal, colorIndex: roster[i].color }));
     this.renderPills();
+    // offline: no ready toggle, start always enabled
+    const rb = $('#readyBtn'); if (rb) rb.style.display = 'none';
+    const sg = $('#startGame'); if (sg) { sg.style.display = ''; sg.disabled = false; sg.textContent = '시작!'; sg.classList.remove('dim'); }
   }
 
   _renderLobbyOnline() {
     const g = this.game, pres = g.roomPresence, me = g.net.self;
     const bySlot = {}; pres.players.forEach(p => { bySlot[p.slot] = p; });
+    const mine = me ? bySlot[me.slot] : null;
+    const myColor = mine ? mine.color : g.humanColor;
+    const myAnimalId = mine ? ANIMALS[(mine.animal || 0) % ANIMALS.length].id : g.playerAnimal;
+    g.playerAnimal = myAnimalId;   // keep local pick in sync (used when the match builds)
+
+    // character-select strip — same control as offline, but pushes to the server
+    const cs = $('#charSel');
+    cs.innerHTML = ANIMALS.map((a, ai) => `<button class="chip ${a.id === myAnimalId ? 'on' : ''}" data-ai="${ai}"><img src="${g.thumbs[a.id][myColor]}" alt="${a.name}"><span class="nm">${a.name}</span></button>`).join('');
+    cs.querySelectorAll('.chip').forEach(b => b.onclick = () => { g.net.setAnimal(+b.dataset.ai); });
+
+    // colour swatches — pick any colour not already taken by a connected player
+    const taken = new Set(pres.players.filter(x => me && x.slot !== me.slot && x.connected).map(x => x.color));
+    const cl = $('#colorSel');
+    cl.innerHTML = TEAMS.map((t, ci) => `<button class="sw ${ci === myColor ? 'on' : ''} ${taken.has(ci) ? 'taken' : ''}" data-c="${ci}" style="background:${t.css}" aria-label="${t.name}"></button>`).join('');
+    cl.querySelectorAll('.sw').forEach(b => b.onclick = () => { const c = +b.dataset.c; if (!taken.has(c)) g.net.setColor(c); });
+
+    // player cards — each shows chosen animal, colour, and ready state
     const slots = $('#slots'); slots.innerHTML = '';
     for (let i = 0; i < pres.config.count; i++) {
       const p = bySlot[i], isYou = me && p && p.slot === me.slot;
       const t = TEAMS[p ? p.color : i];
+      const an = p ? ANIMALS[(p.animal || 0) % ANIMALS.length] : null;
+      const status = !p ? '봇 자동참가'
+        : (p.connected ? (p.ready ? '준비 완료 ✓' : '대기 중…') : '연결 끊김…');
       const el = document.createElement('div');
-      el.className = 'slot filled' + (isYou ? ' you' : '');
+      el.className = 'slot filled' + (isYou ? ' you' : '') + (p && p.ready ? ' ready' : '');
       el.innerHTML = `<div class="badge">P${i + 1}</div><div class="glow" style="background:${t.css}"></div>
         <div class="portrait"></div>
-        <div class="who">${p ? (isYou ? '나' : p.name) : '빈자리'}</div>
-        ${isYou ? '<div class="rdy">준비 완료 ✓ · 탭해서 색 변경</div>'
-                : `<div class="tag">${p ? (p.host ? '방장' : (p.connected ? '플레이어' : '연결 끊김…')) : '봇 자동참가'}</div>`}`;
-      if (isYou) {
-        el.style.cursor = 'pointer';
-        el.addEventListener('click', () => {
-          // cycle to the next colour NOT already taken by another player (no dupes)
-          const taken = new Set(pres.players.filter(x => x.slot !== me.slot && x.connected).map(x => x.color));
-          let next = p.color;
-          for (let k = 1; k <= TEAMS.length; k++) { const c = (p.color + k) % TEAMS.length; if (!taken.has(c)) { next = c; break; } }
-          if (next !== p.color) g.net.setColor(next);
-        });
-      }
+        <div class="who">${p ? (isYou ? '나' : p.name) : '빈자리'}${p && p.host ? ' <span class="hostpip">방장</span>' : ''}</div>
+        <div class="${p && p.ready ? 'rdy' : 'tag'}">${an ? an.name + ' · ' : ''}${status}</div>`;
       slots.appendChild(el);
     }
-    this._lobbyCards = [...slots.querySelectorAll('.portrait')].map((el, i) => ({ el, colorIndex: (bySlot[i] ? bySlot[i].color : i) }));
+    this._lobbyCards = [...slots.querySelectorAll('.portrait')].map((el, i) => ({
+      el, animalId: (bySlot[i] ? ANIMALS[(bySlot[i].animal || 0) % ANIMALS.length].id : ANIMALS[i % ANIMALS.length].id),
+      colorIndex: (bySlot[i] ? bySlot[i].color : i),
+    }));
+
     const host = me && me.host;
     const cp = $('#countPills'); cp.innerHTML = '';
     MATCH.countOptions.forEach(n => { const b = document.createElement('button'); b.className = 'pill' + (pres.config.count === n ? ' on' : ''); b.textContent = n + '인'; if (host) b.onclick = () => g.net.setConfig(n, pres.config.rounds); cp.appendChild(b); });
     const rp = $('#roundPills'); rp.innerHTML = '';
     MATCH.roundOptions.forEach(n => { const b = document.createElement('button'); b.className = 'pill' + (pres.config.rounds === n ? ' on' : ''); b.textContent = n; if (host) b.onclick = () => g.net.setConfig(pres.config.count, n); rp.appendChild(b); });
+
+    // ready toggle (everyone) + start gate (host only, all connected must be ready)
+    const connected = pres.players.filter(x => x.connected);
+    const allReady = connected.length > 0 && connected.every(x => x.ready);
+    const rb = $('#readyBtn');
+    if (rb) {
+      rb.style.display = '';
+      const iAmReady = !!(mine && mine.ready);
+      rb.textContent = iAmReady ? '준비 취소' : '준비';
+      rb.classList.toggle('on', iAmReady);
+      rb.onclick = () => g.net.setReady(!iAmReady);
+    }
+    const sg = $('#startGame');
+    if (sg) {
+      sg.style.display = host ? '' : 'none';
+      sg.disabled = host && !allReady;
+      sg.textContent = host ? (allReady ? '시작!' : '전원 준비 대기…') : '시작!';
+      sg.classList.toggle('dim', host && !allReady);
+    }
   }
 
   renderPills() {

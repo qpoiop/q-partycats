@@ -41,8 +41,10 @@ export class Match {
     this.disposePlayers();
     const g = this.game;
     const bySlot = {}; (roster || []).forEach(r => { bySlot[r.slot] = r; });
-    const myColor = bySlot[localSlot] ? bySlot[localSlot].color : g.humanColor;
-    g.players.push(new Player(g, { idx: 0, teamIdx: myColor, isBot: false, name: '나', slot: localSlot, control: 'local', animal: g.playerAnimal }));
+    const meR = bySlot[localSlot];
+    const myColor = meR ? meR.color : g.humanColor;
+    const myAnimal = meR && meR.animal != null ? ANIMALS[meR.animal % ANIMALS.length].id : g.playerAnimal;
+    g.players.push(new Player(g, { idx: 0, teamIdx: myColor, isBot: false, name: '나', slot: localSlot, control: 'local', animal: myAnimal }));
     let idx = 1;
     for (let slot = 0; slot < g.config.count; slot++) {
       if (slot === localSlot) continue;
@@ -54,7 +56,7 @@ export class Match {
         isBot: !real,
         name: real ? r.name : BOT_NAMES[(idx * 2) % BOT_NAMES.length],
         control: real ? (isHost ? 'remote' : 'net') : (isHost ? 'bot' : 'net'),
-        animal: ANIMALS[slot % ANIMALS.length].id,
+        animal: ANIMALS[((real && r.animal != null ? r.animal : slot) % ANIMALS.length)].id,
       }));
       idx++;
     }

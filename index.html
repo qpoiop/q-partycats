@@ -142,6 +142,12 @@
   .sw{ width:36px; height:36px; border-radius:50%; cursor:pointer; border:2px solid rgba(255,255,255,.32); box-shadow:0 3px 8px rgba(0,0,0,.3); transition:transform .15s; }
   .sw:hover{ transform:scale(1.08); }
   .sw.on{ border-color:#fff; transform:scale(1.16); box-shadow:0 0 0 3px rgba(255,255,255,.25); }
+  .sw.taken{ cursor:not-allowed; opacity:.34; }
+  .sw.taken:hover{ transform:none; }
+  .slot.ready{ border-color:rgba(120,230,150,.6); box-shadow:0 0 0 2px rgba(120,230,150,.3), 0 14px 34px rgba(0,0,0,.3); }
+  .hostpip{ font-size:9px; font-weight:800; background:rgba(255,217,138,.9); color:#3a2a00; border-radius:6px; padding:1px 5px; margin-left:4px; vertical-align:middle; }
+  .btn.dim{ opacity:.5; cursor:not-allowed; }
+  #readyBtn.on{ background:linear-gradient(180deg,#59d98a,#33b268); color:#06301a; border-color:transparent; }
   .slots.pickable .slot{ cursor:pointer; }
   .slots.pickable .slot:hover{ transform:translateY(-3px); border-color:rgba(255,255,255,.28); }
   .slot .rdy{ position:relative; z-index:1; display:inline-block; margin-top:3px; font-size:12px; font-weight:800;
@@ -428,6 +434,7 @@
         <div><div class="lab">라운드</div><div class="pills" id="roundPills"></div></div>
         <div class="go">
           <button class="btn sec mini" id="backHome">뒤로</button>
+          <button class="btn sec mini" id="readyBtn" style="display:none;">준비</button>
           <button class="btn mini" id="startGame" style="font-size:19px;">시작!</button>
         </div>
       </div>

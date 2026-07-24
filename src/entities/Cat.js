@@ -14,6 +14,7 @@ import { BODY, ANIM, BONEMAP, GRAB, MOVE } from '../config.js';
 export class Cat {
   constructor(proto, hex, boneSpec) {
     this.fallback = proto.fallback;
+    this.modelId = proto.modelId;
     this.boneSpec = boneSpec || BONEMAP[proto.modelId] || BONEMAP.cat;
     const inner = SkeletonUtils.clone(proto.scene);
     this._tint(inner, hex);
@@ -145,7 +146,7 @@ export class Cat {
     };
     let box = measure();
     const size = box.getSize(new THREE.Vector3());
-    holder.scale.setScalar(BODY.visualHeight / size.y);
+    holder.scale.setScalar(BODY.visualHeight * (BODY.animalScale[this.modelId] || 1) / size.y);
     holder.updateWorldMatrix(true, true);
     box = measure();
     const c = box.getCenter(new THREE.Vector3());

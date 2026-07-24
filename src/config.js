@@ -31,7 +31,7 @@ export const ANIMALS = [
 // ---------- asset registry ----------
 export const ASSETS = Object.assign(
   Object.fromEntries(ANIMALS.map(a => [a.id, a.asset])),
-  { house: 'scene/forest_house.glb', water: 'scene/water_animation.glb' },
+  { water: 'scene/water_animation.glb' },   // house = procedural cabin (Arena._buildCabin); forest_house.glb was junk, removed
 );
 
 /* ---------- character bone maps (per model) ----------
@@ -71,6 +71,11 @@ export const BODY = {
   density: 1.1,
   visualHeight: 1.85,  // animals are long → keep them small enough for the arena
   linearDamping: 0.2,
+  // Per-animal size trim (keyed by modelId). All are normalised to one HEIGHT,
+  // but tall-necked/antlered species (deer, alpaca) spend that budget on the
+  // neck → their BODIES render small (measured torso 1.09/0.79 vs 1.37 for fox).
+  // A mild up-scale restores body parity without making the neck tower. 1.0 = no change.
+  animalScale: { deer: 1.12, alpaca: 1.18 },
 };
 BODY.footOffset = BODY.capHalfHeight + BODY.capRadius; // center → feet
 BODY.restY = BODY.footOffset;

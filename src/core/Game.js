@@ -107,7 +107,8 @@ export class Game {
   connectRoom(code) {
     const c = code || ('CAT-' + (100 + Math.floor(Math.random() * 899)));
     this.online = true;
-    this.net.connect(c, { name: '나', color: this.humanColor });
+    const ai = Math.max(0, ANIMALS.findIndex(a => a.id === this.playerAnimal));
+    this.net.connect(c, { name: '나', color: this.humanColor, animal: ai });
     this.enterLobby(c);
   }
 
