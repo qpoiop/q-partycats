@@ -60,6 +60,12 @@ export const BODY = {
 };
 BODY.footOffset = BODY.capHalfHeight + BODY.capRadius; // center → feet
 BODY.restY = BODY.footOffset;
+/* Active-ragdoll (phase 1): the visual body leans via an underdamped ANGULAR
+   SPRING instead of a direct lerp, so movement overshoots and settles (물컹) and
+   hits kick a wobble into it. Capsule stays the gameplay authority. */
+BODY.wobbleStiff = 95;    // spring stiffness (higher = snappier)
+BODY.wobbleDamp = 8.5;    // damping (lower = more jiggle/overshoot; ζ≈0.44)
+BODY.wobbleHitKick = 6.5; // angular velocity injected into the lean on a hit
 
 // ---------- physics world ----------
 export const PHYSICS = {

@@ -61,7 +61,8 @@ export class Player {
     this.grip = 0;        // grabber: remaining grip (drains → break)
     this.struggle = 0;    // victim: escape meter (fills by mashing → break)
     this.tumble = 0; this.tumbleAxis = new THREE.Vector3(1, 0, 0); this._axisH = new THREE.Vector3(1, 0, 0); this.squash = 0;
-    this._leanX = 0; this._leanZ = 0;   // persistent body-lean (transients add on top, no compounding)
+    this._leanX = 0; this._leanZ = 0;   // body-lean angular spring position…
+    this._leanVX = 0; this._leanVZ = 0; // …and velocity (underdamped → wobble/overshoot)
     this._wasGround = true; this._prevVy = 0;   // landing-squash detection
     this._koPose = 0; this._koSign = 1;   // knockdown flop ramp (smooth fall-over / get-up)
     this._mashPulse = 0;                  // struggle-mash flail spike (decays)
@@ -77,6 +78,13 @@ export class Player {
   mass() { return this.body.mass(); }
   faceVec() { return new THREE.Vector3(Math.sin(this.facing), 0, Math.cos(this.facing)); }
 
+  /** One step of the underdamped angular lean-spring (active-ragdoll wobble). */
+  _springLean(pos, vel, target, dt) {
+    const a = (target - this[pos]) * BODY.wobbleStiff - this[vel] * BODY.wobbleDamp;
+    this[vel] += a * dt;
+    this[pos] += this[vel] * dt;
+  }
+
   /** Apply an external knockback and open the knock window so the
       movement controller doesn't immediately cancel it. */
   hit(ix, iy, iz, { tumble = 0, axis = null, stagger = false } = {}) {
@@ -84,6 +92,12 @@ export class Player {
     this.knockTimer = MOVE.knockWindow;
     this.onGround = false;
     const impact = Math.hypot(ix, iz) / this.mass();   // horizontal Δspeed
+    // kick the lean-spring so the body jolts and wobbles from the blow
+    const hmag = Math.hypot(ix, iz) || 1;
+    const nfwd = (ix * Math.sin(this.facing) + iz * Math.cos(this.facing)) / hmag;
+    const nside = (ix * Math.cos(this.facing) - iz * Math.sin(this.facing)) / hmag;
+    this._leanVX += -nfwd * BODY.wobbleHitKick;
+    this._leanVZ += nside * BODY.wobbleHitKick;
     // `stagger` = a light attack (punch): it pushes + staggers but never floors,
     // no matter how hard, so knockdowns are reserved for the heavy moves.
     if (impact >= KNOCKDOWN.threshold && !stagger) {
@@ -413,8 +427,10 @@ export class Player {
       // ABSOLUTELY — so the offsets never compound frame-to-frame into a faceplant.
       const lvx = Math.cos(this.facing) * v.x - Math.sin(this.facing) * v.z;
       const lvz = Math.sin(this.facing) * v.x + Math.cos(this.facing) * v.z;
-      this._leanX += (THREE.MathUtils.clamp(lvz * 0.05, -0.4, 0.4) - this._leanX) * Math.min(1, dt * 6);
-      this._leanZ += (THREE.MathUtils.clamp(-lvx * 0.05, -0.4, 0.4) - this._leanZ) * Math.min(1, dt * 6);
+      // underdamped angular spring → the body overshoots and jiggles to a stop
+      // (weighty, Party-Animals-y) instead of snapping to the target lean.
+      this._springLean('_leanX', '_leanVX', THREE.MathUtils.clamp(lvz * 0.05, -0.4, 0.4), dt);
+      this._springLean('_leanZ', '_leanVZ', THREE.MathUtils.clamp(-lvx * 0.05, -0.4, 0.4), dt);
       let ox = this._leanX, oz = this._leanZ;
       if (this.moveMag > 0.5 && this.onGround) {
         const blocked = Math.max(0, 1 - Math.hypot(v.x, v.z) / (MOVE.speed * 0.55));
