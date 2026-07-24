@@ -40,16 +40,14 @@ export class LobbyView {
     const r = this.renderer;
     const w = innerWidth, h = innerHeight;
     if (r.domElement.clientWidth !== w || r.domElement.clientHeight !== h) r.setSize(w, h, true);
-    // calm showcase idle: a gentle breathing bob most of the time, and every few
-    // seconds a smooth paw-wave with a small hop (offset per colour). _baseY keeps
-    // the feet on the card floor (was sinking without it).
+    // calm, continuous showcase idle — NO periodic cheer (it toggled the sit clip
+    // on/off and popped, which read as stutter). Just the steady idle clip + a
+    // gentle breathing bob; the slow turn (below) gives it life. _baseY = feet down.
     const now = performance.now() * 0.001;
     this.cats.forEach((c, i) => {
       const ph = i * 1.6;
-      const cyc = (now * 0.4 + ph) % 4.5;                        // ~4.5s cycle
-      const wave = cyc < 1.3 ? Math.sin((cyc / 1.3) * Math.PI) : 0;   // brief, smooth wave
-      c.updateAnimation(dt, { speed: 0.15, onGround: true, cheer: wave * 0.85 });
-      c.model.position.y = (c._baseY || 0) + Math.abs(Math.sin(now * 2.2 + ph)) * 0.045 + wave * 0.14;
+      c.updateAnimation(dt, { speed: 0.1, onGround: true });
+      c.model.position.y = (c._baseY || 0) + Math.sin(now * 1.6 + ph) * 0.03;
     });
 
     r.clear();

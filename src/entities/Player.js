@@ -445,7 +445,7 @@ export class Player {
         const blocked = Math.max(0, 1 - Math.hypot(v.x, v.z) / (MOVE.speed * 0.55));
         ox += 0.42 * blocked;   // strain-lean into a shove
       }
-      if (this.punching > 0) ox += 0.35 * Math.sin(Math.min(1, this.punching / ABIL.punchTime) * Math.PI);   // jab lunge
+      if (this.punching > 0) ox += 0.5 * Math.sin(Math.min(1, this.punching / ABIL.punchTime) * Math.PI);   // punch lunge
       // GAIT: bob + weight-shift with the stride so it walks with weight (not gliding)
       const gsp = Math.hypot(v.x, v.z);
       if (this.onGround && gsp > 0.5) {

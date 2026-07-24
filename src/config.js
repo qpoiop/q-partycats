@@ -59,7 +59,7 @@ export const BODY = {
   capHalfHeight: 0.5,
   capRadius: 0.66,
   density: 1.1,
-  visualHeight: 3.7,   // bigger, readable characters
+  visualHeight: 4.3,   // bigger, readable characters (visual only; capsule unchanged)
   linearDamping: 0.2,
 };
 BODY.footOffset = BODY.capHalfHeight + BODY.capRadius; // center → feet
