@@ -64,6 +64,7 @@ export class Player {
     this.tumble = 0; this.tumbleAxis = new THREE.Vector3(1, 0, 0); this._axisH = new THREE.Vector3(1, 0, 0); this.squash = 0;
     this._leanX = 0; this._leanZ = 0;   // body-lean angular spring position…
     this._leanVX = 0; this._leanVZ = 0; // …and velocity (underdamped → wobble/overshoot)
+    this._yawV = 0;                     // smoothed facing angular velocity → bank-into-turn
     this._wasGround = true; this._prevVy = 0;   // landing-squash detection
     this._gait = 0;   // stride phase for the gait bob/weight-shift
     this._jumpT = 0;  // jump anticipation (crouch) timer
@@ -360,7 +361,11 @@ export class Player {
     const rate = this.onGround ? MOVE.turnRateGround : MOVE.turnRateAir;
     let df = this.faceTarget - this.facing;
     while (df > Math.PI) df -= 6.283; while (df < -Math.PI) df += 6.283;
-    this.facing += df * Math.min(1, dt * rate);
+    const step = df * Math.min(1, dt * rate);
+    this.facing += step;
+    // yaw angular velocity (rad/s), smoothed → drives bank-into-turn lean in pose()
+    const yv = dt > 0 ? step / dt : 0;
+    this._yawV += (yv - this._yawV) * Math.min(1, dt * 10);
   }
 
   // ============================================================
@@ -469,8 +474,13 @@ export class Player {
       const lvz = Math.sin(this.facing) * v.x + Math.cos(this.facing) * v.z;
       // underdamped angular spring → the body overshoots and jiggles to a stop
       // (weighty, Party-Animals-y) instead of snapping to the target lean.
+      // bank INTO a turn: roll toward the inside, scaled by how fast we're moving
+      // (a standing pivot barely banks; a fast corner leans hard). Fed into the
+      // same roll-lean spring so it wobbles/settles instead of snapping.
+      const fwdSp = Math.min(1, Math.hypot(v.x, v.z) / (MOVE.speed * 0.7));
+      const bank = THREE.MathUtils.clamp(this._yawV * fwdSp * 0.09, -0.28, 0.28);
       this._springLean('_leanX', '_leanVX', THREE.MathUtils.clamp(lvz * 0.05, -0.4, 0.4), dt);
-      this._springLean('_leanZ', '_leanVZ', THREE.MathUtils.clamp(-lvx * 0.05, -0.4, 0.4), dt);
+      this._springLean('_leanZ', '_leanVZ', THREE.MathUtils.clamp(-lvx * 0.05, -0.4, 0.4) + bank, dt);
       let ox = this._leanX, oz = this._leanZ;
       if (this.moveMag > 0.5 && this.onGround) {
         const blocked = Math.max(0, 1 - Math.hypot(v.x, v.z) / (MOVE.speed * 0.55));
