@@ -221,6 +221,10 @@ export const ANIM = {
   tailTurnGain: 0.3,   // tail swings this much per rad/s of turn
   tailIdle: 0.16,      // resting sway amplitude
   tailBob: 0.12,       // extra sway while moving
+  // phase 3: knocked-out limp — loose limbs settle heavily, head/tail droop
+  limpLegSplay: 0.5,   // how far the loose legs sprawl
+  limpHeadLoll: 0.5,   // head drops (gravity)
+  limpTailDroop: 0.35, // tail goes slack
 };
 
 /* ---------- CAMERA & RENDER ----------

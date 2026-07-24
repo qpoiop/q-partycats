@@ -449,7 +449,8 @@ export class Player {
     this._turnRate = df2 / Math.max(dt, 1e-3);
     this._prevFacing = this.facing;
     const rear = (this.grabbedBy || this.grabbing) ? 1 : 0;   // stand on hind legs to grab/struggle
-    const flail = this.grabbedBy ? Math.min(1.4, 0.4 + this.struggle * 0.6 + this._mashPulse * 0.6) : this.teeter > 0 ? 1 : this.knockdown > 0 ? 0.85 : this.tumble > 0 ? this.tumble : 0;
+    // knocked down → limp ragdoll (loose settle), NOT energetic flail
+    const flail = this.grabbedBy ? Math.min(1.4, 0.4 + this.struggle * 0.6 + this._mashPulse * 0.6) : this.teeter > 0 ? 1 : this.knockdown > 0 ? 0 : this.tumble > 0 ? this.tumble : 0;
     this.cat.updateAnimation(dt, {
       speed: sp, onGround: this.onGround, grabbed: !!this.grabbedBy, flail, rear,
       punch: this.punching > 0 ? Math.min(1, this.punching / ABIL.punchTime) : 0,
@@ -457,6 +458,7 @@ export class Player {
       slide: this.sliding > 0 ? Math.min(1, this.sliding / ABIL.slideTime) : 0,
       pull:  this.grabbing ? (Math.sin(performance.now() * 0.001 * GRAB.tugFreq) * 0.5 + 0.5) : 0,
       turn:  this._turnRate,
+      limp:  this._koPose,
     });
     // fallback stand-in has no clips → give it a little walk bob for life
     if (this.cat.fallback && this.tumble <= 0) {

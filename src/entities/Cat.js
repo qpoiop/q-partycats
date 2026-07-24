@@ -139,7 +139,7 @@ export class Cat {
   updateAnimation(dt, s) {
     const speed = s.speed || 0, onGround = !!s.onGround;
     const flail = s.flail || 0, rear = s.rear || 0;
-    const punch = s.punch || 0, kick = s.kick || 0, slide = s.slide || 0, cheer = s.cheer || 0, pull = s.pull || 0;
+    const punch = s.punch || 0, kick = s.kick || 0, slide = s.slide || 0, cheer = s.cheer || 0, pull = s.pull || 0, limp = s.limp || 0;
     const acting = punch + kick + slide + cheer;
 
     this.mixer.update(dt);
@@ -191,6 +191,16 @@ export class Cat {
       }
     }
 
+    // KNOCKED-OUT LIMP (active-ragdoll phase 3): loose limbs sprawl and settle
+    // with a heavy low-frequency jiggle, head/tail droop — reads limp, not flailing.
+    if (limp > 0.05) {
+      for (let i = 0; i < this.legs.length; i++) {
+        this._rot(this.legs[i], Math.sin(t * 3 + i * 1.7) * 0.18 * limp, 0, (i % 2 ? 1 : -1) * ANIM.limpLegSplay * limp + Math.sin(t * 2.3 + i) * 0.12 * limp);
+      }
+      if (this.head) this._rot(this.head, (ANIM.limpHeadLoll + Math.sin(t * 2.4) * 0.1) * limp, 0, 0);
+      if (this.tail.length) this._rot(this.tail[0], ANIM.limpTailDroop * limp, Math.sin(t * 1.8) * 0.15 * limp, 0);
+    }
+
     // procedural limb flail (knocked / teetering / struggling)
     if (flail > 0.02 && this.legs.length) {
       const set = rear > 0.5 ? fl : this.legs;   // reared → only front paws flail (grappling)
@@ -203,7 +213,7 @@ export class Cat {
 
     // SECONDARY MOTION (active-ragdoll phase 2): during ordinary locomotion the
     // head lags the body's turn (spring) and bobs with the stride → alive, not stiff.
-    if (this.head && acting < 0.05 && flail < 0.05 && rear < 0.5) {
+    if (this.head && acting < 0.05 && flail < 0.05 && rear < 0.5 && limp < 0.05) {
       const tgtYaw = -THREE.MathUtils.clamp((s.turn || 0) * ANIM.headYawGain, -0.5, 0.5);
       const acc = (tgtYaw - this._hy) * ANIM.headLagStiff - this._hyV * ANIM.headLagDamp;
       this._hyV += acc * dt; this._hy += this._hyV * dt;
@@ -212,7 +222,7 @@ export class Cat {
     }
 
     // tail sway (secondary motion) — lazy idle swish that swings out on turns
-    if (this.tail.length && flail < 0.05) {
+    if (this.tail.length && flail < 0.05 && limp < 0.05) {
       const move = (onGround && speed > ANIM.idleSpeed) ? Math.sin(t * (5 + speed)) * ANIM.tailBob * Math.min(1, speed / ANIM.refSpeed) : 0;
       const tgt = THREE.MathUtils.clamp((s.turn || 0) * ANIM.tailTurnGain, -0.7, 0.7) + Math.sin(t * 2.2) * ANIM.tailIdle + move;
       this._tyV += ((tgt - this._ty) * ANIM.tailStiff - this._tyV * ANIM.tailDamp) * dt;
