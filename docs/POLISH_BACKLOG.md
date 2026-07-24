@@ -119,10 +119,11 @@
 ## ★ 새 모델(애니 있는 Quaternius 동물팩) 통합 — 유저 제공
 - [x] STAGE1: Fox.gltf(자체포함) 통합 — 실제 클립 Idle/Walk/Gallop 스피드 블렌드. BONEMAP.cat→fox 리그(FrontLowerLeg/BackLowerLeg/Head/Tail1). hasLoco 플래그로 절차적 gait/walkstep/head·tail 2차모션 스킵(클립이 처리). visualHeight 2.3(여우 길어서), 접지 feetY 0, 방향 +Z 정면 맞음. 로드/애니/틴트/접지 검증, 콘솔0.
 - [x] STAGE2: 액션에 실제 클립 — 주먹=Attack, 맞기=Idle_HitReact, 넉다운=Death, 점프=Gallop_Jump 완료. (점프: jumpLaunch에서 Gallop_Jump ×1.1 재생 → 클립 leap 아크가 물리 행타임 2·jumpVel/g≈0.84s vs 클립0.93s에 싱크. 검증: 공중 전구간 클립활성, 착지시 자동 clear→loco, 착지스쿼시 유지. 옛모델 no-op.)
-- [ ] STAGE4: 여우 rest 방향/스케일 미세, 캡슐 vs 여우 비주얼 폭 재조정.
+- [x] STAGE4(동물별 스케일): BODY.animalScale{deer:1.12,alpaca:1.18} — 사슴/알파카는 목·뿔이 height budget 먹어 몸이 작게 렌더(측정 torso 1.09/0.79 vs 여우 1.37). 마일드 업스케일로 몸 균형 복원(목 안치솟음). 검증 torso 1.22/0.93. Cat.modelId로 조회, _normalise에서 곱. ("사슴크다"는 visualHeight 2.3→1.85+균일정규화로 이미 해결됨 — 현재 문제는 반대로 몸이 작던 것.)
 - [x] STAGE2(멀티동물+로비): 동물 6종(여우/늑대/허스키/시바/사슴/알파카) 로스터(ANIMALS). 플레이어마다 다른 동물. 크레이지아케이드식 로비 = 캐릭터선택(초상화칩)+색상선택+준비. 각 동물 초상화 렌더(thumbs[animalId][color]). LobbyView (동물,색) 조합 캐싱. 검증: 4마리 다른 동물 인게임, 로비 선택 동작.
 - [x] STAGE3: 액션 실제 클립 — 주먹=Attack, 점프=Gallop_Jump, 맞기=HitReact, 넉다운=Death 원샷 재생 완료.
-- [ ] STAGE4: 온라인 로비에도 동물 선택(워커 roster에 animal 추가) + 준비토글. 동물별 스케일 미세(사슴 크다). gltf→glb+draco로 로드 경량화.
+- [x] STAGE4(온라인 로비 동물+준비): 온라인 로비를 오프라인과 동일 UX로 — 캐릭터 스트립(setAnimal)+색상 스와치(선점색 dim) 서버 반영, 슬롯카드에 동물/색/준비상태 표시. 전원 준비토글 + 방장 시작버튼은 접속자 전원 ready 전까지 잠금(서버 Room._allReady 강제, 우회불가). animal(0-5)+ready를 entry/roster/presence+join쿼리에 추가, buildOnlinePlayers가 슬롯별 animal 사용. 검증: mock presence로 렌더/게이팅/오프라인 무회귀 확인.
+- [~] STAGE4(경량화): tracked-but-unused 모델 10.9MB 제거(forest_house.glb=절차적 통나무집으로 대체됨, low-poly 옛고양이). ASSETS.house 삭제. **남음**: gltf→glb+draco (동물 6종 ~16MB) — DRACOLoader+wasm 디코더 배선 필요 + 로컬 툴링 없음 → 리스크로 보류. 후속: gltf-pipeline 설치 후 glb변환(base64 33% 제거)만이라도, 또는 draco 풀배선.
 - [x] STAGE3(액션 클립): Cat 원샷 액션시스템(playAction, LoopOnce, 재생중 loco/절차 override+return). 주먹=Attack 클립, 맞기=HitReact 클립. 검증: 펀치 프레임8에 공격자 Attack + 피격자 HitReact 동시. hasLoco 아닌 옛모델은 no-op(절차 유지).
 - [x] STAGE3b(넉다운=Death): 정착+knockdown시 Death 클립(넘어져 눕기, hold), 일어나면 clearAction→loco. hasLoco는 koPose 대신 knockdown 직접 키잉(getup 재재생 버그 수정). 공중선 여전히 텀블. 검증: 날아감→착지 Death→일어남.
 - [x] 유저3지적(색/크기/모바일): (1) 팀색 안보임 — _tint 프래그먼트가 중간휘도 밴드만 믹스 → 밝은 여우/허스키 회색유지. 전휘도 강틴트(mix uTeam*(0.35+0.85*lum), 0.7)로 교체, 자기음영은 lum로 유지. 검증: 인게임 4마리 f26a72/5aa6ee/4ad39a/f5c24f 뚜렷, 로비칩 빨강틴트. (2) 모델 큼 — visualHeight 2.3→1.85. (3) 모바일로비 — pointer:coarse 미디어쿼리: 캐릭터스트립 가로스크롤(nowrap+overflow), 칩50/스와치32 축소, <560px 세로스택+슬롯 4열. 빌드 그린, 앱에러0.
