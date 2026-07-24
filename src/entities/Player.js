@@ -174,6 +174,7 @@ export class Player {
     if (this.invuln > 0) this.invuln -= dt;
     if (this.grabCd > 0) this.grabCd -= dt;
     if (this.knockdown > 0) this.knockdown -= dt;
+    else if (this.cat._act && this.cat._act.name === 'Death') this.cat.clearAction();   // got up → drop the Death pose
     if (this._mashPulse > 0) this._mashPulse = Math.max(0, this._mashPulse - dt * 4.5);
     if (this._clash > 0) this._clash = Math.max(0, this._clash - dt * 3.5);
     // jump anticipation: hold a crouch, then launch (springy, not instant)
@@ -426,9 +427,15 @@ export class Player {
       this.tilt.rotation.set(0, 0, 0);
       this.tilt.rotateOnAxis(this._axisH, this._airSpin);
       this.tumble = 1;
+    } else if (this.cat.hasLoco && this.knockdown > 0) {
+      // rigged model, settled & downed → the Death clip (a proper fall/lie), held
+      // while down. Keyed on knockdown (not the lingering koPose) so it drops the
+      // instant the cat gets up (preStep clears the clip → loco resumes).
+      if (!this.cat._act || this.cat._act.name !== 'Death') this.cat.playAction('Death', true, 1.0);
+      this.tilt.rotation.set(0, 0, 0);
+      this.tumble = 1;
     } else if (this._koPose > 0.02) {
-      // settled & downed → FLOP onto the side (roll about the forward axis), lifted
-      // so it lies flat ON the grass; ramped by _koPose (topple/rise, no snap).
+      // old cat → procedural side-flop (roll about the forward axis, lifted flat)
       const e = this._koPose;
       this.tilt.rotation.set(0, 0, (Math.PI * 0.5) * this._koSign * e);
       this.cat.model.position.y = this.cat._baseY * (1 - e) + 0.7 * e;

@@ -124,4 +124,4 @@
 - [ ] STAGE3: 액션 실제 클립 — 주먹=Attack, 점프=Jump, 맞기=HitReact, 넉다운=Death 원샷 재생 + 절차오버레이 정리.
 - [ ] STAGE4: 온라인 로비에도 동물 선택(워커 roster에 animal 추가) + 준비토글. 동물별 스케일 미세(사슴 크다). gltf→glb+draco로 로드 경량화.
 - [x] STAGE3(액션 클립): Cat 원샷 액션시스템(playAction, LoopOnce, 재생중 loco/절차 override+return). 주먹=Attack 클립, 맞기=HitReact 클립. 검증: 펀치 프레임8에 공격자 Attack + 피격자 HitReact 동시. hasLoco 아닌 옛모델은 no-op(절차 유지).
-- [ ] STAGE3b: 점프=Gallop_Jump, 넉다운=Death 클립. 슬라이딩/날라차기/잡기도 클립화 검토(전용 클립 없어 절차 유지 가능).
+- [x] STAGE3b(넉다운=Death): 정착+knockdown시 Death 클립(넘어져 눕기, hold), 일어나면 clearAction→loco. hasLoco는 koPose 대신 knockdown 직접 키잉(getup 재재생 버그 수정). 공중선 여전히 텀블. 검증: 날아감→착지 Death→일어남.
