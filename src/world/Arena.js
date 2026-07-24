@@ -23,7 +23,29 @@ export class Arena {
     this._buildSeaBackdrop();
     this._buildPlatform();
     this._buildDecor();
+    this._buildCabin();
     this._buildMotes();
+  }
+
+  /* A cozy low-poly cabin landmark on the rim. Replaces the bundled
+     forest_house glTF, which renders as a tangle of dead trees + power poles
+     (reads as junk/ruins, not a house). */
+  _buildCabin() {
+    const R = ARENA.radius, g = new THREE.Group();
+    const wall = new THREE.Mesh(new THREE.BoxGeometry(2.6, 1.9, 2.2),
+      new THREE.MeshStandardMaterial({ color: 0xcaa06a, roughness: 1, flatShading: true }));
+    wall.position.y = 0.95; wall.castShadow = true; wall.receiveShadow = true; g.add(wall);
+    const roof = new THREE.Mesh(new THREE.ConeGeometry(2.35, 1.4, 4),
+      new THREE.MeshStandardMaterial({ color: 0xb2543a, roughness: 1, flatShading: true }));
+    roof.position.y = 2.55; roof.rotation.y = Math.PI / 4; roof.castShadow = true; g.add(roof);
+    const door = new THREE.Mesh(new THREE.BoxGeometry(0.72, 1.12, 0.12),
+      new THREE.MeshStandardMaterial({ color: 0x5a3b22, roughness: 1 }));
+    door.position.set(-0.5, 0.56, 1.11); g.add(door);
+    const win = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6, 0.12),
+      new THREE.MeshStandardMaterial({ color: 0x9fd6ff, emissive: 0x2c4a63, roughness: 0.4 }));
+    win.position.set(0.7, 1.05, 1.11); g.add(win);
+    g.position.set(-3.5, 0, -R + 2.8); g.rotation.y = 0.6;
+    this.group.add(g);
   }
 
   _buildSky() {
@@ -218,16 +240,31 @@ export class Arena {
       k.scale.y = 0.6; k.castShadow = true; this.group.add(k);
     }
 
-    // grass tufts (instanced, subtle)
-    const tuftMat = new THREE.MeshStandardMaterial({ color: 0x79b84a, roughness: 1 });
-    const tuft = new THREE.InstancedMesh(new THREE.ConeGeometry(0.16, 0.6, 5), tuftMat, 90);
-    const m = new THREE.Matrix4();
-    for (let i = 0; i < 90; i++) {
-      const a = Math.random() * 6.28, r = Math.random() * (R - 0.8);
-      m.makeTranslation(Math.cos(a) * r, 0.28, Math.sin(a) * r);
-      tuft.setMatrixAt(i, m);
+    // grass clumps (instanced) — short, wide and randomly scaled/rotated so they
+    // read as a meadow, not a field of identical spikes (the old thin cones)
+    const grassMat = new THREE.MeshStandardMaterial({ color: 0x86c94e, roughness: 1, flatShading: true });
+    const grass = new THREE.InstancedMesh(new THREE.ConeGeometry(0.2, 0.36, 5), grassMat, 80);
+    const m = new THREE.Matrix4(), q = new THREE.Quaternion(), pos = new THREE.Vector3(), scl = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0);
+    for (let i = 0; i < 80; i++) {
+      const a = Math.random() * 6.28, r = Math.sqrt(Math.random()) * (R - 1.0);
+      const s = 0.55 + Math.random() * 0.9;
+      pos.set(Math.cos(a) * r, 0.16 * s, Math.sin(a) * r);
+      q.setFromAxisAngle(up, Math.random() * 6.28);
+      scl.set(s * (0.8 + Math.random() * 0.6), s, s * (0.8 + Math.random() * 0.6));
+      m.compose(pos, q, scl); grass.setMatrixAt(i, m);
     }
-    tuft.receiveShadow = true; this.group.add(tuft);
+    grass.receiveShadow = true; grass.castShadow = true; this.group.add(grass);
+
+    // little flowers — dots of colour scattered in the grass for charm
+    const petal = [new THREE.Color(0xffffff), new THREE.Color(0xffd94a), new THREE.Color(0xff8fbf), new THREE.Color(0x9fd0ff)];
+    const flowers = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(0.09, 0), new THREE.MeshStandardMaterial({ roughness: 0.8 }), 34);
+    for (let i = 0; i < 34; i++) {
+      const a = Math.random() * 6.28, r = Math.sqrt(Math.random()) * (R - 1.2);
+      pos.set(Math.cos(a) * r, 0.12, Math.sin(a) * r);
+      m.compose(pos, q, scl.set(1, 0.6, 1)); flowers.setMatrixAt(i, m);
+      flowers.setColorAt(i, petal[(Math.random() * petal.length) | 0]);
+    }
+    flowers.instanceColor.needsUpdate = true; this.group.add(flowers);
   }
 
   _buildMotes() {

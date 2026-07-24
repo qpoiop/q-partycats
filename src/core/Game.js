@@ -64,9 +64,8 @@ export class Game {
     this.assets = new AssetManager((p, t) => this.ui.setLoad(p, t));
     this.ui.setLoad(0.32, '고양이 불러오는 중…');
     await this.assets.loadModel('cat', makeFallbackCat);
-    this.ui.setLoad(0.55, '숲속 집 불러오는 중…');
-    const house = await this.assets.loadModel('house', makeFallbackHouse);
-    this.arena.addProp(house.scene);
+    // NOTE: the bundled forest_house.glb renders as dead trees + power poles
+    // (junk, not a house) → replaced by Arena._buildCabin(). Not loaded.
     this.ui.setLoad(0.74, '바다 불러오는 중…');
     const water = await this.assets.loadModel('water', makeFallbackWater);
     this.arena.addWater(water);
