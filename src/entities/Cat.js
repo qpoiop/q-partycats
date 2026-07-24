@@ -237,8 +237,12 @@ export class Cat {
       this.idle.setEffectiveWeight(idleW);
       this.walk.setEffectiveWeight(walkW);
       this.run.setEffectiveWeight(runW);
-      this.walk.timeScale = THREE.MathUtils.clamp(speed / 2.2, 0.7, 1.8);
-      this.run.timeScale = THREE.MathUtils.clamp(speed / 5.5, 0.8, 1.6);
+      // timeScale so the paw's authored stride tracks ground speed (less skating).
+      // Divisors = measured single-clip stride ground speed (front paw: walk≈1.5,
+      // gallop≈2.6 with the crossfade in mind); capped to avoid frantic legs at
+      // top speed (a full match to 6u/s would need ~3× → cartoon sprint).
+      this.walk.timeScale = THREE.MathUtils.clamp(speed / 1.5, 0.8, 1.8);
+      this.run.timeScale = THREE.MathUtils.clamp(speed / 2.6, 0.9, 1.85);
     } else {
       if (this.walk) {
         let w;
