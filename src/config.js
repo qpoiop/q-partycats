@@ -222,15 +222,18 @@ export const ANIM = {
   headLagDamp: 8,      // head-yaw spring damping (underdamped → trails then catches)
   headYawGain: 0.16,   // how far the head lags per rad/s of body turn
   headBob: 0.1,        // stride bob amplitude (pitch)
-  // tail secondary motion — a lazy sway that swings out on turns
-  tailStiff: 45, tailDamp: 6.5,
-  tailTurnGain: 0.3,   // tail swings this much per rad/s of turn
-  tailIdle: 0.16,      // resting sway amplitude
-  tailBob: 0.12,       // extra sway while moving
+  // tail secondary motion — only 2 tail bones, so keep it a SUBTLE drift, not a
+  // rigid single-bone wag (real cats don't yaw-swing the whole tail base)
+  tailStiff: 30, tailDamp: 7,
+  tailTurnGain: 0.07,  // barely leans out on turns
+  tailIdle: 0.05,      // faint resting drift
+  tailBob: 0.05,       // faint extra drift while moving
   // phase 3: knocked-out limp — loose limbs settle heavily, head/tail droop
   limpLegSplay: 0.5,   // how far the loose legs sprawl
   limpHeadLoll: 0.5,   // head drops (gravity)
   limpTailDroop: 0.35, // tail goes slack
+  // jump: tuck the legs in the air so a leap reads as a leap, not a slide up
+  airTuckFront: 0.75, airTuckBack: 0.6,
 };
 
 /* ---------- CAMERA & RENDER ----------

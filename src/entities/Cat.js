@@ -182,6 +182,12 @@ export class Cat {
       for (const leg of fl) this._rot(leg, -1.0 * slide, 0, 0);
     }
 
+    // AIRBORNE (jump) — tuck the legs so a leap reads as a leap, not a slide-up
+    if (!onGround && acting < 0.05 && flail < 0.05 && limp < 0.05 && rear < 0.5 && !s.grabbed) {
+      for (const leg of fl) this._rot(leg, -ANIM.airTuckFront, 0, 0);
+      for (const leg of bl) this._rot(leg, ANIM.airTuckBack, 0, 0);
+    }
+
     // VICTORY CHEER — both paws thrown up high (만세) and opened/closed together
     if (cheer > 0.02 && fl.length) {
       const wv = Math.sin(t * 7);
@@ -224,7 +230,7 @@ export class Cat {
     // tail sway (secondary motion) — lazy idle swish that swings out on turns
     if (this.tail.length && flail < 0.05 && limp < 0.05) {
       const move = (onGround && speed > ANIM.idleSpeed) ? Math.sin(t * (5 + speed)) * ANIM.tailBob * Math.min(1, speed / ANIM.refSpeed) : 0;
-      const tgt = THREE.MathUtils.clamp((s.turn || 0) * ANIM.tailTurnGain, -0.7, 0.7) + Math.sin(t * 2.2) * ANIM.tailIdle + move;
+      const tgt = THREE.MathUtils.clamp((s.turn || 0) * ANIM.tailTurnGain, -0.2, 0.2) + Math.sin(t * 1.3) * ANIM.tailIdle + move;
       this._tyV += ((tgt - this._ty) * ANIM.tailStiff - this._tyV * ANIM.tailDamp) * dt;
       this._ty += this._tyV * dt;
       this._rot(this.tail[0], 0, this._ty, 0);
