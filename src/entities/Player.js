@@ -60,6 +60,7 @@ export class Player {
     this.invuln = 0; this.knockTimer = 0;
     this.grabbing = null; this.grabbedBy = null; this.grabCd = 0;
     this.grip = 0;        // grabber: remaining grip (drains → break)
+    this._throwCharge = 0;// grabber: spin wind-up for a farther throw (0..1)
     this.struggle = 0;    // victim: escape meter (fills by mashing → break)
     this.tumble = 0; this.tumbleAxis = new THREE.Vector3(1, 0, 0); this._axisH = new THREE.Vector3(1, 0, 0); this.squash = 0;
     this._leanX = 0; this._leanZ = 0;   // body-lean angular spring position…
@@ -197,7 +198,10 @@ export class Player {
     if (this.grabbing) {
       this.grip -= (GRAB.gripDrainBase + GRAB.gripDrainStruggle * this.grabbing.struggle) * dt;
       if (this.grip <= 0 || !this.grabbing.alive) { this.game.actions.breakFree(this); }
-    }
+      // spin wind-up: whirling the grabber charges a farther throw, bleeds when still
+      this._throwCharge = Math.max(0, Math.min(1,
+        this._throwCharge + (Math.abs(this._yawV) * GRAB.throwSpinGain - GRAB.throwSpinDecay) * dt));
+    } else if (this._throwCharge) this._throwCharge = 0;
 
     // air drag on a flung cat → it arcs down and lands instead of flying straight
     if (!this.onGround && (this.knockTimer > 0 || this.knockdown > 0)) {

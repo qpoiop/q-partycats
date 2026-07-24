@@ -225,6 +225,13 @@ export const GRAB = {
   breakKick: 7.5,       // knockback the victim kicks the grabber with on break
   breakStun: 0.6,       // grabber can't re-grab for this long after a break
   victimPopVel: 5.5,    // victim's escape pop away from grabber
+
+  // spin-to-throw (Party-Animals whirl): spinning while carrying winds up a
+  // charge that flings the victim farther. Must spin THEN throw — the charge
+  // bleeds off when you stop, so you can't just hold a full-power throw.
+  throwSpinGain: 0.34,  // charge gained per (rad/s of spin)·second
+  throwSpinDecay: 0.32, // charge lost per second when not spinning
+  throwSpinBoost: 1.2,  // full charge → throw ×(1 + this) distance/velocity
 };
 
 // ---------- animation sync (kills foot-sliding) ----------

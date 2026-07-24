@@ -133,11 +133,14 @@ export class Actions {
   throw(p) {
     const t = p.grabbing; if (!t) return;
     const dir = p.faceVec();
-    t.body.setLinvel(V(dir.x * ABIL.throwVel, ABIL.throwLift, dir.z * ABIL.throwVel), true);
+    // spin wind-up scales the throw (Party-Animals whirl): charge 0 → base, 1 → ×2.2
+    const chg = p._throwCharge || 0, boost = 1 + chg * GRAB.throwSpinBoost;
+    t.body.setLinvel(V(dir.x * ABIL.throwVel * boost, ABIL.throwLift * (1 + chg * 0.4), dir.z * ABIL.throwVel * boost), true);
     t.knockTimer = MOVE.knockWindow;
-    t.grabbedBy = null; p.grabbing = null; p.grabCd = GRAB.cd; p.grip = 0;
+    t.grabbedBy = null; p.grabbing = null; p.grabCd = GRAB.cd; p.grip = 0; p._throwCharge = 0;
     t.tumble = 1; t.tumbleAxis.set(Math.random() - 0.5, 0.2, Math.random() - 0.5).normalize();
-    this.game.fx.dust(t.pos(), t.hex, 16, 1); this.game.fx.shake(0.55, p.pos()); this.game.fx.flash(0.18, p.pos());
+    this.game.fx.dust(t.pos(), t.hex, 16 + Math.round(chg * 16), 1 + chg * 0.6);
+    this.game.fx.shake(0.55 + chg * 0.5, p.pos()); this.game.fx.flash(0.18 + chg * 0.12, p.pos());
   }
 
   /** Victim wins the tug-of-war: pops free and kicks the grabber back. */
