@@ -165,7 +165,7 @@ export const GRAB = {
   radius: 2.4,          // reach to grab a cat in front
   cd: 0.5,              // cooldown after grab/throw/break
   holdDist: 1.9,        // how far in front the victim is held (avoids model overlap)
-  holdHeight: 0.95,     // lift the victim clearly off the ground (was planted in it)
+  holdHeight: 1.35,     // lift the victim clearly into the air (spring sags ~0.6, so aim high → held aloft, reads as a grab)
   spring: 60,           // spring stiffness pulling victim → hold point
   damp: 14,             // spring damping (≈ critical for the mass)
   maxForce: 42,         // accel cap so the pull stays physical, not a snap
