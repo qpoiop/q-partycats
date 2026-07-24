@@ -123,6 +123,7 @@
 - [x] 주먹→박치기(박치기) — Attack 클립(앞발/물기, 틀린 모션) 제거하고 절차적 머리 박기: 와인드업에 머리 뒤로 젖힘→앞아래로 스냅(박치기), 앞다리 브레이스, 몸 런지(기존 Player lean). 검증: head pitch -1.02→+0.57, Attack 클립 미재생. 히트로직(punchStrike) 유지.
 - [x] 파티클 축소(4인 전투 가독성) — dust point 0.42→0.26+밝기 1.6→1.2, 쇼크링 성장 11→6.5×, 대시 streak 0.34×2.0→0.22×1.5+opacity 0.5→0.34.
 - [x] 로비 칩 검은 오버레이 — 하드 블랙 네임바(rgba(0,0,0,.5))가 검은 오버레이로 보임 → 하단 그라디언트+칩 bg 상향. 초상화 RT 엣지 언프리멀티플라이(어두운 프린지 제거).
+- [x] 색상&캐릭터 둘 다 유니크 + 로비 UI — 유저 지적("안겹치게 맞아? 캐릭란 작음, 상대걸 택하는 개념 이상"). 색상은 이미 서버강제였고 캐릭터도 유니크화: worker _animalFree/_pickAnimal(join=빈동물, setAnimal=선점거부). 온라인 칩은 타인 선점 동물 잠금(회색+🔒, 색상스와치와 동일). 오프라인 봇은 이미 distinct(검증 4유니크 동물+4유니크 색hex). UI: 칩 60→78px, 스와치 36→44, picks를 "내 캐릭터/내 색상" 강조패널로 감싸 소유 명확화, 선점옵션 잠금→"상대걸 택함" 혼란 제거.
 
 ## ★ 새 모델(애니 있는 Quaternius 동물팩) 통합 — 유저 제공
 - [x] STAGE1: Fox.gltf(자체포함) 통합 — 실제 클립 Idle/Walk/Gallop 스피드 블렌드. BONEMAP.cat→fox 리그(FrontLowerLeg/BackLowerLeg/Head/Tail1). hasLoco 플래그로 절차적 gait/walkstep/head·tail 2차모션 스킵(클립이 처리). visualHeight 2.3(여우 길어서), 접지 feetY 0, 방향 +Z 정면 맞음. 로드/애니/틴트/접지 검증, 콘솔0.
