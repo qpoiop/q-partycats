@@ -6,6 +6,8 @@
 claude.ai 디자인 프로토타입(`game.html` / `game.js`)을 **상용 기반 구조로 재설계**하고,
 렌더링 거리·모델 이동/속도의 부자연스러움을 개선한 버전입니다.
 
+![PARTY CATS 홈 화면](docs/img/pc_home.jpg)
+
 ## 실행
 
 ```bash
