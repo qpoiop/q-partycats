@@ -203,10 +203,11 @@ export class Cat {
       if (fl[1]) this._rot(fl[1], 0.3 * cock, 0, 0);              // off paw loads with the wind-up
     }
 
-    // FLYING KICK (날라차기) — front paws thrust forward, hind legs kick back
-    if (kick > 0.02 && fl.length) {
-      for (const leg of fl) this._rot(leg, -1.5 * kick, 0, 0);
-      for (const leg of bl) this._rot(leg, 0.8 * kick, 0, 0);
+    // FLYING KICK (날라차기) — a drop-kick: body leans back (Player) and the HIND
+    // legs snap FORWARD to strike with the feet; front paws pull in to the chest.
+    if (kick > 0.02) {
+      for (const leg of fl) this._rot(leg, -0.7 * kick, 0, 0);   // front paws tuck to the chest
+      for (const leg of bl) this._rot(leg, -1.7 * kick, 0, 0);   // hind legs kick forward (the strike)
     }
 
     // SLIDE (슬라이딩) — superman dive: front paws stretch forward, hind legs
