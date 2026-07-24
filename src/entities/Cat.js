@@ -24,6 +24,7 @@ export class Cat {
 
     this._q = new THREE.Quaternion(); this._e = new THREE.Euler();
     this._hy = 0; this._hyV = 0;   // head-yaw secondary-motion spring (lag)
+    this._ty = 0; this._tyV = 0;   // tail-sway secondary-motion spring
     this._mapBones(inner);
     this._normalise(holder);
 
@@ -45,7 +46,7 @@ export class Cat {
      fallback when the regexes tag nothing (best-effort; skips leaf `_end` bones
      which cluster and mislead). Procedural motion tolerates a partial map. */
   _mapBones(inner) {
-    this.legs = []; this.frontLegs = []; this.backLegs = []; this.head = null;
+    this.legs = []; this.frontLegs = []; this.backLegs = []; this.head = null; this.tail = [];
     const spec = this.boneSpec;
     const bones = [];
     inner.traverse(o => { if (o.isBone) bones.push(o); });
@@ -55,6 +56,7 @@ export class Cat {
       if (spec.frontLeg.test(o.name)) { this.legs.push(o); this.frontLegs.push(o); }
       else if (spec.backLeg.test(o.name)) { this.legs.push(o); this.backLegs.push(o); }
       else if (!this.head && spec.head.test(o.name)) this.head = o;
+      else if (spec.tail && spec.tail.test(o.name)) this.tail.push(o);
     }
     if (this.frontLegs.length && this.backLegs.length && this.head) return;
 
@@ -207,6 +209,15 @@ export class Cat {
       this._hyV += acc * dt; this._hy += this._hyV * dt;
       const bob = (onGround && speed > ANIM.idleSpeed) ? Math.sin(t * (8 + speed)) * ANIM.headBob * Math.min(1, speed / ANIM.refSpeed) : 0;
       this._rot(this.head, bob, this._hy, 0);
+    }
+
+    // tail sway (secondary motion) — lazy idle swish that swings out on turns
+    if (this.tail.length && flail < 0.05) {
+      const move = (onGround && speed > ANIM.idleSpeed) ? Math.sin(t * (5 + speed)) * ANIM.tailBob * Math.min(1, speed / ANIM.refSpeed) : 0;
+      const tgt = THREE.MathUtils.clamp((s.turn || 0) * ANIM.tailTurnGain, -0.7, 0.7) + Math.sin(t * 2.2) * ANIM.tailIdle + move;
+      this._tyV += ((tgt - this._ty) * ANIM.tailStiff - this._tyV * ANIM.tailDamp) * dt;
+      this._ty += this._tyV * dt;
+      this._rot(this.tail[0], 0, this._ty, 0);
     }
   }
 

@@ -29,8 +29,8 @@ export const ASSETS = {
    regexes that tag its front legs / back legs / head — nothing else changes.
    `default` is the best-effort fallback when a model has no entry. */
 export const BONEMAP = {
-  cat:     { frontLeg: /F[LR]/, backLeg: /B[LR]/, head: /^head/i },
-  default: { frontLeg: /(front|fore).*(leg|paw|arm|hand)|F[LR]\b/i, backLeg: /(back|hind|rear).*(leg|paw)|B[LR]\b/i, head: /head|skull|neck/i },
+  cat:     { frontLeg: /F[LR]/, backLeg: /B[LR]/, head: /^head/i, tail: /^Bone002/ },
+  default: { frontLeg: /(front|fore).*(leg|paw|arm|hand)|F[LR]\b/i, backLeg: /(back|hind|rear).*(leg|paw)|B[LR]\b/i, head: /head|skull|neck/i, tail: /tail/i },
 };
 
 /* ---------- arena ----------
@@ -216,6 +216,11 @@ export const ANIM = {
   headLagDamp: 8,      // head-yaw spring damping (underdamped → trails then catches)
   headYawGain: 0.16,   // how far the head lags per rad/s of body turn
   headBob: 0.1,        // stride bob amplitude (pitch)
+  // tail secondary motion — a lazy sway that swings out on turns
+  tailStiff: 45, tailDamp: 6.5,
+  tailTurnGain: 0.3,   // tail swings this much per rad/s of turn
+  tailIdle: 0.16,      // resting sway amplitude
+  tailBob: 0.12,       // extra sway while moving
 };
 
 /* ---------- CAMERA & RENDER ----------
