@@ -3,7 +3,32 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { RENDER } from '../config.js';
+
+/* Final look grade — saturation + contrast + a warm/cool split and a vignette,
+   applied to the tone-mapped image so the picture reads produced, not flat. */
+const GradeShader = {
+  uniforms: {
+    tDiffuse: { value: null },
+    uSat: { value: 1.18 }, uContrast: { value: 1.07 }, uWarm: { value: 0.035 },
+    uVignette: { value: 0.42 }, uLift: { value: 0.008 },
+  },
+  vertexShader: 'varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }',
+  fragmentShader: `
+    uniform sampler2D tDiffuse; uniform float uSat,uContrast,uWarm,uVignette,uLift; varying vec2 vUv;
+    void main(){
+      vec4 src = texture2D(tDiffuse, vUv);
+      vec3 c = src.rgb;
+      float l = dot(c, vec3(0.299,0.587,0.114));
+      c = mix(vec3(l), c, uSat);                       // saturation
+      c = (c - 0.5) * uContrast + 0.5 + uLift;         // contrast + lift
+      c += (c - 0.5) * vec3(uWarm, uWarm*0.25, -uWarm);// warm highlights / cool shadows
+      vec2 d = vUv - 0.5;                              // vignette
+      c *= 1.0 - dot(d,d) * uVignette;
+      gl_FragColor = vec4(clamp(c,0.0,1.0), src.a);
+    }`,
+};
 
 /* ============================================================
    Engine — renderer, scene, camera, post-processing, lights.
@@ -70,6 +95,13 @@ export class Engine {
     this.bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), strength, radius, threshold);
     this.composer.addPass(this.bloom);
     this.composer.addPass(new OutputPass());
+    // final look grade (last, on the tone-mapped sRGB image)
+    const grade = new ShaderPass(GradeShader);
+    const gr = RENDER.grade;
+    grade.uniforms.uSat.value = gr.saturation; grade.uniforms.uContrast.value = gr.contrast;
+    grade.uniforms.uWarm.value = gr.warmth; grade.uniforms.uVignette.value = gr.vignette;
+    grade.uniforms.uLift.value = gr.lift;
+    this.composer.addPass(grade);
   }
 
   resize() {

@@ -262,8 +262,11 @@ export const RENDER = {
   fogFar: 520,          // …only the far skyline hazes (sea reads blue, not grey)
   abyssColor: 0x05060c, // the void the arena floats above
   pixelRatioCap: 2,
-  bloom: { strength: 0.42, radius: 0.6, threshold: 0.9 },
-  exposure: 1.02,
+  bloom: { strength: 0.5, radius: 0.62, threshold: 0.85 },
+  exposure: 1.04,
+  // final "look" grade (applied to the tone-mapped image): a touch of punch +
+  // a cinematic vignette so the picture reads produced, not flat.
+  grade: { saturation: 1.18, contrast: 1.07, warmth: 0.035, vignette: 0.42, lift: 0.008 },
   shadowMapSize: 2048,
   shadowExtent: 22,     // covers the platform + edge decoration
   shadowFar: 90,
