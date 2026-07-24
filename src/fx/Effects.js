@@ -22,7 +22,7 @@ export class Effects {
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(this._dPos, 3));
     g.setAttribute('color', new THREE.BufferAttribute(this._dCol, 3));
-    const mat = new THREE.PointsMaterial({ size: 0.42, vertexColors: true, transparent: true, opacity: 1, depthWrite: false, blending: THREE.AdditiveBlending });
+    const mat = new THREE.PointsMaterial({ size: 0.26, vertexColors: true, transparent: true, opacity: 1, depthWrite: false, blending: THREE.AdditiveBlending });
     this._dGeo = g;
     this._dPts = new THREE.Points(g, mat); this._dPts.frustumCulled = false; scene.add(this._dPts);
     this._dust = []; this._dHead = 0;
@@ -61,8 +61,8 @@ export class Effects {
   }
 
   streak(p, dir) {
-    const m = new THREE.Mesh(new THREE.PlaneGeometry(0.34, 2.0),
-      new THREE.MeshBasicMaterial({ color: p.hex, transparent: true, opacity: 0.5, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }));
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(0.22, 1.5),
+      new THREE.MeshBasicMaterial({ color: p.hex, transparent: true, opacity: 0.34, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }));
     const pos = p.pos();
     m.position.set(pos.x, pos.y + 0.1, pos.z);
     m.lookAt(pos.x + dir.x, pos.y + 0.1, pos.z + dir.z); m.rotateY(Math.PI / 2);
@@ -97,7 +97,7 @@ export class Effects {
       d.life -= dt; d.vy += gy * dt; d.x += d.vx * dt; d.y += d.vy * dt; d.z += d.vz * dt; d.vx *= 0.92; d.vz *= 0.92;
       const k = Math.max(0, d.life);
       this._dPos[i * 3] = d.x; this._dPos[i * 3 + 1] = d.y; this._dPos[i * 3 + 2] = d.z;
-      this._dCol[i * 3] = d.r * k * 1.6; this._dCol[i * 3 + 1] = d.g * k * 1.6; this._dCol[i * 3 + 2] = d.b * k * 1.6;
+      this._dCol[i * 3] = d.r * k * 1.2; this._dCol[i * 3 + 1] = d.g * k * 1.2; this._dCol[i * 3 + 2] = d.b * k * 1.2;
     }
     this._dGeo.attributes.position.needsUpdate = true;
     this._dGeo.attributes.color.needsUpdate = true;
@@ -105,14 +105,14 @@ export class Effects {
     // rings
     for (let i = this._rings.length - 1; i >= 0; i--) {
       const r = this._rings[i]; r.life -= dt;
-      const s = 1 + (0.6 - r.life) * 11; r.m.scale.setScalar(s);
+      const s = 1 + (0.6 - r.life) * 6.5; r.m.scale.setScalar(s);
       r.m.material.opacity = Math.max(0, r.life / 0.6);
       if (r.life <= 0) { this.group.remove(r.m); this._rings.splice(i, 1); }
     }
     // streaks
     for (let i = this._streaks.length - 1; i >= 0; i--) {
       const s = this._streaks[i]; s.life -= dt;
-      s.m.material.opacity = Math.max(0, s.life / 0.28) * 0.5;
+      s.m.material.opacity = Math.max(0, s.life / 0.28) * 0.34;
       s.m.scale.y = 1 + (0.28 - s.life) * 3;
       if (s.life <= 0) { this.group.remove(s.m); this._streaks.splice(i, 1); }
     }

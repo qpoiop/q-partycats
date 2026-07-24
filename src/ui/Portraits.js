@@ -28,7 +28,19 @@ export function renderPortraits(renderer, proto, teams) {
       const sy = 319 - y;
       for (let x = 0; x < 320; x++) {
         const si = (sy * 320 + x) * 4, di = (y * 320 + x) * 4;
-        img.data[di] = buf[si]; img.data[di + 1] = buf[si + 1]; img.data[di + 2] = buf[si + 2]; img.data[di + 3] = buf[si + 3];
+        const a = buf[si + 3];
+        // un-premultiply edge pixels: the RT blends model over a transparent-black
+        // clear, so partially-covered edges come back darkened → a black fringe in
+        // the chips. Dividing RGB by alpha restores the true colour (straight alpha).
+        if (a > 0 && a < 255) {
+          const inv = 255 / a;
+          img.data[di] = Math.min(255, buf[si] * inv);
+          img.data[di + 1] = Math.min(255, buf[si + 1] * inv);
+          img.data[di + 2] = Math.min(255, buf[si + 2] * inv);
+        } else {
+          img.data[di] = buf[si]; img.data[di + 1] = buf[si + 1]; img.data[di + 2] = buf[si + 2];
+        }
+        img.data[di + 3] = a;
       }
     }
     ctx.putImageData(img, 0, 0);

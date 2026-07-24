@@ -262,14 +262,14 @@ export class Cat {
     if (pull > 0.02) for (const leg of fl) this._rot(leg, -pull * GRAB.tugArm, 0, 0);
 
     // PUNCH (주먹치기) — a big Party-Animals haymaker: rear the paw way UP on the
-    // wind-up, then hammer it down and forward through the strike. Large arc so
-    // it reads from the play camera.
-    if (punch > 0.02 && fl.length) {
+    // HEADBUTT (박치기) — rear the head back on the wind-up, then snap it
+    // down-and-forward to butt with the crown. Body lunges in from Player.
+    if (punch > 0.02) {
       const phase = 1 - Math.min(1, punch);                       // 0→1 elapsed
-      const raise = Math.max(0, 1 - phase / 0.35);                // 1 (paw up, wind-up) → 0
-      const swing = Math.sin(THREE.MathUtils.clamp((phase - 0.1) / 0.9, 0, 1) * Math.PI);  // down-forward strike
-      this._rot(fl[0], -2.2 * raise + 1.7 * swing, 0, 0.5 * raise);   // high overhead → chop down/forward
-      if (fl[1]) this._rot(fl[1], -1.0 * raise, 0, 0);            // off paw guards up on the wind-up
+      const rear = Math.max(0, 1 - phase / 0.3);                  // 1 (head reared back) → 0
+      const thrust = Math.sin(THREE.MathUtils.clamp((phase - 0.1) / 0.9, 0, 1) * Math.PI); // forward butt
+      if (this.head) this._rot(this.head, 1.15 * thrust - 0.5 * rear, 0, 0);   // chin up → butt down/forward
+      for (const leg of fl) this._rot(leg, 0.55 * thrust - 0.4 * rear, 0, 0);  // front legs brace into it
     }
 
     // FLYING KICK (날라차기) — a drop-kick: body leans back (Player) and the HIND

@@ -51,7 +51,7 @@ export const BONEMAP = {
    One radius R drives everything: spawns, decoration, and camera framing
    are all expressed as ratios of R so nothing is hand-tuned in isolation. */
 export const ARENA = {
-  radius: 11.5,          // platform radius — the single source of scale (smaller = tighter, cats read bigger)
+  radius: 10.0,          // platform radius — the single source of scale (smaller = tighter, cats read bigger)
   rimHeight: -0.02,
   spawnFactor: 0.5,      // cats spawn at R*this (central, clearly visible)
   decorRingFactor: 0.97, // trees live on the rim ring (R*this) → play area stays clear

@@ -132,10 +132,11 @@
   .pickrow{ display:flex; flex-direction:column; gap:7px; }
   .pickrow>.lab{ font-size:11px; letter-spacing:1px; opacity:.72; font-weight:700; text-transform:uppercase; }
   .chars{ display:flex; gap:8px; flex-wrap:wrap; }
-  .chip{ width:60px; height:60px; border-radius:14px; border:2px solid rgba(255,255,255,.14); background:rgba(255,255,255,.06);
+  .chip{ width:60px; height:60px; border-radius:14px; border:2px solid rgba(255,255,255,.14); background:rgba(255,255,255,.12);
      cursor:pointer; overflow:hidden; padding:0; position:relative; transition:transform .15s, border-color .15s; }
   .chip img{ width:100%; height:100%; object-fit:cover; display:block; }
-  .chip .nm{ position:absolute; left:0; right:0; bottom:0; font-size:9px; text-align:center; background:rgba(0,0,0,.5); padding:1px 0; }
+  .chip .nm{ position:absolute; left:0; right:0; bottom:0; font-size:9px; text-align:center; padding:6px 0 1px;
+     background:linear-gradient(to top, rgba(0,0,0,.55), rgba(0,0,0,0)); }
   .chip:hover{ transform:translateY(-2px); border-color:rgba(255,255,255,.3); }
   .chip.on{ border-color:#ffd98a; box-shadow:0 0 0 2px rgba(255,217,138,.32); }
   .colors{ display:flex; gap:11px; align-items:center; height:60px; }
