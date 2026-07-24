@@ -48,6 +48,7 @@
 ### 리그/모션 품질 (rig quality)
 - [ ] 걷기/달리기 다리 모션 눈으로 튜닝.
 - [x] 아이들 fidget — 미사용 클립 Idle_2/Idle_2_HeadLow/Eating 활용. 가만히 5~11s(랜덤) 서있으면 fidget 1회 재생(look-around/eat), Idle과 0.3s 페이드 인/아웃(검증 weight 0→1→0 램프, 스냅없음). 이동/액션/잡힘 즉시 인터럽트→반응성 안막음. 배회중 어트랙트캣은 resting아니라 fidget 안함(정상). 옛모델 no-op. 정지루프=싸구려 → 생동감.
+- [x] 착지복구 클립 Jump_ToIdle(미사용) — Gallop_Jump 이륙의 짝(크라우치→기립). 컨트롤된 착지(넉백비행 아님)에 재생, transient 마킹으로 "멈춰서 착지"만 표시 — 달리며 착지(speed>MOVE.speed*0.5)는 즉시 취소→loco. fidget 인터럽트 일반화: fidget=엄격 resting 취소 / landing=착지 관성 허용하고 실제 달리기·액션·잡힘에만 취소. Idle과 페이드인(스냅없음). 검증: 멈춤착지 46프레임 재생(weight 0.07→1), 달림착지 1프레임 취소, 400프레임 self-play 0 bad. 옛모델 no-op.
 - [x] 잡힌 쪽 확실히 공중에 들기 — 측면뷰 검증 결과 스프링 sag로 feet 0.69만 떠서 옆에 앉은 것처럼 보였음. holdHeight 0.95→1.35(sag ~0.6 감안). 검증: groupY 0.69→1.1, 확실히 들어올림. 잡은쪽은 뒷발로 서서 앞발 뻗어 잡는 자세 OK.
 - [x] 모델 교체/추가 인터페이스 — 뼈 매핑을 **config.BONEMAP 선언형**(모델별 regex)으로. 기존 spatial fallback이 이 리그에서 쓰레기 뽑던 것 확인 → _end 뼈 제외로 하드닝(이제 다리4개 정확). proto.modelId 부착. 새 모델=BONEMAP 항목 추가만.
 
