@@ -18,7 +18,7 @@ export const BOT_NAMES = ['냥냥', '까칠', '치즈', '우당탕', '폭탄', '
 
 // ---------- asset registry (add characters/maps here) ----------
 export const ASSETS = {
-  cat:   'scene/low-poly_oldxian_comix_cat.glb',
+  cat:   'scene/Fox.gltf',   // Quaternius animated fox — real Idle/Walk/Gallop/Attack/Jump/HitReact clips
   house: 'scene/forest_house.glb',
   water: 'scene/water_animation.glb',
 };
@@ -29,11 +29,10 @@ export const ASSETS = {
    regexes that tag its front legs / back legs / head — nothing else changes.
    `default` is the best-effort fallback when a model has no entry. */
 export const BONEMAP = {
-  // frontLeg/backLeg = the paw bones (used for hand-like action poses).
-  // legRoot = the actual limb chains (hip→knee→ankle→foot) that bend at a knee,
-  // used for the procedural walk step. Classified front/back/left/right by the
-  // foot's local position at map time.
-  cat:     { frontLeg: /F[LR]/, backLeg: /B[LR]/, head: /^head/i, tail: /^Bone002/, legRoot: /^Bone(_07|009|012|015)/ },
+  // frontLeg/backLeg = the paw/lower-leg bones (used for hand-like action poses).
+  // With real locomotion clips the procedural gait is skipped (hasLoco); these
+  // are only for the ability overlays (punch/grab/kick/clash).
+  cat:     { frontLeg: /^FrontLowerLeg/, backLeg: /^BackLowerLeg/, head: /^Head$/, tail: /^Tail1$/, legRoot: /^(FrontUpperLeg|BackUpperLeg)/ },  // 'cat' asset = Fox.gltf
   default: { frontLeg: /(front|fore).*(leg|paw|arm|hand)|F[LR]\b/i, backLeg: /(back|hind|rear).*(leg|paw)|B[LR]\b/i, head: /head|skull|neck/i, tail: /tail/i, legRoot: /(hip|thigh|upperleg|femur)/i },
 };
 
@@ -59,7 +58,7 @@ export const BODY = {
   capHalfHeight: 0.5,
   capRadius: 0.66,
   density: 1.1,
-  visualHeight: 4.3,   // bigger, readable characters (visual only; capsule unchanged)
+  visualHeight: 2.3,   // Fox is long → normalise its HEIGHT smaller so its length fits the arena
   linearDamping: 0.2,
 };
 BODY.footOffset = BODY.capHalfHeight + BODY.capRadius; // center → feet

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
-import { BODY, ANIM, BONEMAP, GRAB } from '../config.js';
+import { BODY, ANIM, BONEMAP, GRAB, MOVE } from '../config.js';
 
 /* ============================================================
    Cat — one character's visual: a team-tinted clone of the cat
@@ -33,10 +33,13 @@ export class Cat {
     this.clips = {};
     (proto.animations || []).forEach(a => { this.clips[a.name] = this.mixer.clipAction(a); });
 
-    this.walk = this.clips['Walking'];
-    this.sit = this.clips['Sitting'];
-    if (this.walk) { this.walk.play(); this.walk.setEffectiveWeight(0); }
-    if (this.sit) { this.sit.play(); this.sit.setEffectiveWeight(0); }
+    // real clips if present (Fox: Idle/Walk/Gallop), else the old cat's Walking/Sitting
+    this.idle = this.clips['Idle'] || this.clips['Sitting'];
+    this.walk = this.clips['Walk'] || this.clips['Walking'];
+    this.run = this.clips['Gallop'] || null;
+    this.sit = this.clips['Sitting'];   // legacy path
+    this.hasLoco = !!(this.walk && this.run && this.idle);   // has a full locomotion set → skip procedural gait
+    [this.idle, this.walk, this.run].forEach(a => { if (a) { a.play(); a.setEffectiveWeight(0); } });
     this._bob = 0;
 
   }
@@ -172,17 +175,26 @@ export class Cat {
     const acting = punch + kick + slide + cheer;
 
     this.mixer.update(dt);
-    if (this.walk) {
-      let w;
-      if (!onGround) w = 0.15;
-      else w = THREE.MathUtils.clamp((speed - ANIM.idleSpeed) / (ANIM.walkBlendSpeed - ANIM.idleSpeed), 0, 1);
-      this.walk.setEffectiveWeight(w);
-      this.walk.timeScale = onGround
-        ? THREE.MathUtils.clamp(speed / ANIM.refSpeed, ANIM.timeScaleMin, ANIM.timeScaleMax)
-        : 0.5;
-    }
-    if (this.sit) {
-      this.sit.setEffectiveWeight(onGround && speed < ANIM.idleSpeed && !s.grabbed && flail < 0.05 && acting < 0.05 ? 0.7 : 0);
+    if (this.hasLoco) {
+      // real clips: cross-fade Idle → Walk → Gallop by speed, stride tracks velocity
+      const runFrom = MOVE.speed * 0.55;
+      const runW = THREE.MathUtils.clamp((speed - runFrom) / (MOVE.speed - runFrom), 0, 1);
+      const walkW = THREE.MathUtils.clamp((speed - ANIM.idleSpeed) / (ANIM.walkBlendSpeed - ANIM.idleSpeed), 0, 1) * (1 - runW);
+      const idleW = Math.max(0, 1 - walkW - runW);
+      this.idle.setEffectiveWeight(idleW);
+      this.walk.setEffectiveWeight(walkW);
+      this.run.setEffectiveWeight(runW);
+      this.walk.timeScale = THREE.MathUtils.clamp(speed / 2.2, 0.7, 1.8);
+      this.run.timeScale = THREE.MathUtils.clamp(speed / 5.5, 0.8, 1.6);
+    } else {
+      if (this.walk) {
+        let w;
+        if (!onGround) w = 0.15;
+        else w = THREE.MathUtils.clamp((speed - ANIM.idleSpeed) / (ANIM.walkBlendSpeed - ANIM.idleSpeed), 0, 1);
+        this.walk.setEffectiveWeight(w);
+        this.walk.timeScale = onGround ? THREE.MathUtils.clamp(speed / ANIM.refSpeed, ANIM.timeScaleMin, ANIM.timeScaleMax) : 0.5;
+      }
+      if (this.sit) this.sit.setEffectiveWeight(onGround && speed < ANIM.idleSpeed && !s.grabbed && flail < 0.05 && acting < 0.05 ? 0.7 : 0);
     }
 
     const t = performance.now() * 0.001;
@@ -258,7 +270,7 @@ export class Cat {
 
     // PROCEDURAL WALK STEP — swing the real hip chains and bend the knees in a
     // trot, so the legs actually step (with a knee!) instead of gliding.
-    if (this.gaitLegs && this.gaitLegs.length && s.stride != null && onGround &&
+    if (!this.hasLoco && this.gaitLegs && this.gaitLegs.length && s.stride != null && onGround &&
         speed > ANIM.idleSpeed && acting < 0.05 && flail < 0.05 && limp < 0.05 && rear < 0.5 && !s.grabbed) {
       const amp = Math.min(1, speed / ANIM.refSpeed);
       for (const L of this.gaitLegs) {
@@ -272,7 +284,7 @@ export class Cat {
 
     // SECONDARY MOTION (active-ragdoll phase 2): during ordinary locomotion the
     // head lags the body's turn (spring) and bobs with the stride → alive, not stiff.
-    if (this.head && acting < 0.05 && flail < 0.05 && rear < 0.5 && limp < 0.05) {
+    if (!this.hasLoco && this.head && acting < 0.05 && flail < 0.05 && rear < 0.5 && limp < 0.05) {
       const tgtYaw = -THREE.MathUtils.clamp((s.turn || 0) * ANIM.headYawGain, -0.5, 0.5);
       const acc = (tgtYaw - this._hy) * ANIM.headLagStiff - this._hyV * ANIM.headLagDamp;
       this._hyV += acc * dt; this._hy += this._hyV * dt;
@@ -282,7 +294,7 @@ export class Cat {
 
     // tail (secondary motion) — held UP with an S-curve: the base sways and the
     // tip counter-rotates + curls, so 2 bones read as an organic tail, not a wag.
-    if (this.tail.length && flail < 0.05 && limp < 0.05) {
+    if (!this.hasLoco && this.tail.length && flail < 0.05 && limp < 0.05) {
       const move = (onGround && speed > ANIM.idleSpeed) ? Math.sin(t * (5 + speed)) * ANIM.tailBob * Math.min(1, speed / ANIM.refSpeed) : 0;
       const tgt = THREE.MathUtils.clamp((s.turn || 0) * ANIM.tailTurnGain, -0.25, 0.25) + Math.sin(t * 1.3) * ANIM.tailIdle + move;
       this._tyV += ((tgt - this._ty) * ANIM.tailStiff - this._tyV * ANIM.tailDamp) * dt;

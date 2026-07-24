@@ -115,3 +115,9 @@
 ## 유저: 전투 물리성 부족(편안해보임) — 붙어도 반응없이 겹쳐 잘림
 - [x] 클래시 반응 — _grindShove 접촉+미는 순간 _clash=1(밀린쪽도 0.7). pose에서 두발로 rear-up(ox -=0.9*clash) + Cat 앞발 forward 밀기(grinding jitter). 붙으면 서로 두발로 서서 앞발로 밀며 착붙(gap 1.32 유지). 세워서 수평겹침/잘림도 감소. 검증 스샷(두 고양이 몸싸움).
 - [x] 사이클35: 컬러그레이드+비네트 / 충돌 클래시 반응(두발로 서서 앞발 밀기, 착붙).
+
+## ★ 새 모델(애니 있는 Quaternius 동물팩) 통합 — 유저 제공
+- [x] STAGE1: Fox.gltf(자체포함) 통합 — 실제 클립 Idle/Walk/Gallop 스피드 블렌드. BONEMAP.cat→fox 리그(FrontLowerLeg/BackLowerLeg/Head/Tail1). hasLoco 플래그로 절차적 gait/walkstep/head·tail 2차모션 스킵(클립이 처리). visualHeight 2.3(여우 길어서), 접지 feetY 0, 방향 +Z 정면 맞음. 로드/애니/틴트/접지 검증, 콘솔0.
+- [ ] STAGE2: 액션에 실제 클립 — 주먹=Attack, 점프=Jump/Gallop_Jump, 맞기=Idle_HitReact, 넉다운=Death. 현재 절차적 오버레이(punch/kick/grab/clash 뼈회전)와 충돌/중복 정리.
+- [ ] STAGE3: 틴트 강도(여우 밝아서 팀색 약함) + 8개 꼬리뼈 활용 + 각 플레이어 다른 동물(Fox/Wolf/Husky/ShibaInu 등 = 진짜 "파티 애니멀즈") 옵션.
+- [ ] STAGE4: 여우 rest 방향/스케일 미세, 캡슐 vs 여우 비주얼 폭 재조정.

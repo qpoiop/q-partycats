@@ -470,9 +470,10 @@ export class Player {
       // CLASH: pressing chest-to-chest into another cat → rear up on the hind legs
       // and shove (front paws push in Cat). This is the physical scrum contact.
       if (this._clash > 0.12) ox += -0.9 * this._clash;
-      // GAIT: bob + weight-shift with the stride so it walks with weight (not gliding)
+      // GAIT: bob + weight-shift with the stride so it walks with weight (not gliding).
+      // Skipped when the model has real locomotion clips (they carry the weight).
       const gsp = Math.hypot(v.x, v.z);
-      if (this.onGround && gsp > 0.5 && this._clash < 0.3) {
+      if (!this.cat.hasLoco && this.onGround && gsp > 0.5 && this._clash < 0.3) {
         this._gait += dt * BODY.gaitFreq * gsp;
         const sf = Math.min(1, gsp / MOVE.speed);
         this.cat.model.position.y = this.cat._baseY + Math.abs(Math.sin(this._gait)) * BODY.gaitBounce * sf;
