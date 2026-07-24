@@ -143,8 +143,8 @@ export const ABIL = {
   dashTime: 0.4,       // active window (contact = strike)
   dashStrikeGround: 4.0,
   dashStrikeGroundLift: 2.2,
-  dashStrikeAir: 5.5,      // flying-kick — strong but not a full-arena launch
-  dashStrikeAirLift: 3.6,
+  dashStrikeAir: 9.5,      // flying-kick (점프+대시) — HARDEST to pull off (aerial,
+  dashStrikeAirLift: 4.2,  // telegraphed), so it hits HARDEST: the top finisher
 
   // punch (주먹치기) — quick jab, the bread-and-butter attack
   punchCd: 0.5,
@@ -156,8 +156,8 @@ export const ABIL = {
   punchStrikeFrac: 0.4,// contact lands at this fraction into the swing (windup → hit), not instantly
   // 돌진 박치기 (charging ram): a headbutt DURING a dash carries the dash momentum
   // → a heavy hit that KNOCKS DOWN (vs the plain stagger of a standing headbutt).
-  ramKnock: 8,         // > KNOCKDOWN.threshold (5.5) so it floors, not just staggers
-  ramLift: 3.4,
+  ramKnock: 6.5,       // > KNOCKDOWN.threshold (5.5) so it floors, but below the
+  ramLift: 3.2,        // aerial finishers (a ground move → 3rd tier)
 
   // slide (슬라이딩) = jump+grab → a flat flying dive (prone, limbs stretched)
   slideVel: 13,
