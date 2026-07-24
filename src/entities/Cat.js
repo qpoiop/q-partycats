@@ -26,6 +26,7 @@ export class Cat {
     this._hy = 0; this._hyV = 0;   // head-yaw secondary-motion spring (lag)
     this._ty = 0; this._tyV = 0;   // tail-sway secondary-motion spring
     this._mapBones(inner);
+    this._mapGaitLegs(inner);
     this._normalise(holder);
 
     this.mixer = new THREE.AnimationMixer(inner);
@@ -73,6 +74,30 @@ export class Cat {
       for (const p of legBones) { this.legs.push(p.b); (p.z >= zMid ? this.frontLegs : this.backLegs).push(p.b); }
     }
     if (!this.head) this.head = pos.reduce((a, c) => (c.y > a.y ? c : a)).b;
+  }
+
+  /* Map the real limb chains (hip→knee→…→foot) for the procedural walk step.
+     Each entry: { hip, knee, phase, isFront }. Trot gait pairs diagonals
+     (FL+BR vs FR+BL) 180° out of phase. Classified by the foot's local pos. */
+  _mapGaitLegs(inner) {
+    this.gaitLegs = [];
+    const spec = this.boneSpec;
+    if (!spec.legRoot) return;
+    inner.updateWorldMatrix(true, true);
+    const wInv = this.model.matrixWorld.clone().invert();
+    const v = new THREE.Vector3();
+    inner.traverse(o => {
+      if (!o.isBone || !spec.legRoot.test(o.name)) return;
+      // walk the single-child chain to the foot
+      let knee = null, cur = o, foot = o, depth = 0;
+      while (true) { const k = cur.children.filter(c => c.isBone); if (k.length !== 1) break; cur = k[0]; depth++; if (depth === 1) knee = cur; foot = cur; }
+      if (!knee) return;
+      foot.getWorldPosition(v); v.applyMatrix4(wInv);
+      const isFront = (o.getWorldPosition(new THREE.Vector3()).applyMatrix4(wInv).z) > -0.12;
+      const isLeft = v.x < 0;
+      const phase = ((isFront && isLeft) || (!isFront && !isLeft)) ? 0 : Math.PI;   // diagonal trot
+      this.gaitLegs.push({ hip: o, knee, phase, isFront });
+    });
   }
 
   _tint(inner, hex) {
@@ -218,6 +243,20 @@ export class Cat {
         this._rot(set[i], Math.sin(t * 17 + ph) * 1.2 * flail, Math.sin(t * 11 + ph) * 0.5 * flail, Math.cos(t * 14 + ph) * 0.9 * flail);
       }
       if (this.head) this._rot(this.head, Math.sin(t * 10) * 0.5 * flail, Math.sin(t * 8) * 0.5 * flail, 0);
+    }
+
+    // PROCEDURAL WALK STEP — swing the real hip chains and bend the knees in a
+    // trot, so the legs actually step (with a knee!) instead of gliding.
+    if (this.gaitLegs && this.gaitLegs.length && s.stride != null && onGround &&
+        speed > ANIM.idleSpeed && acting < 0.05 && flail < 0.05 && limp < 0.05 && rear < 0.5 && !s.grabbed) {
+      const amp = Math.min(1, speed / ANIM.refSpeed);
+      for (const L of this.gaitLegs) {
+        const ph = s.stride + L.phase;
+        const swing = Math.sin(ph);
+        const lift = Math.max(0, Math.sin(ph));
+        this._rot(L.hip, swing * ANIM.legSwing * amp, 0, 0);
+        this._rot(L.knee, -lift * ANIM.kneeBend * amp, 0, 0);
+      }
     }
 
     // SECONDARY MOTION (active-ragdoll phase 2): during ordinary locomotion the

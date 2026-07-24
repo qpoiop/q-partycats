@@ -29,8 +29,12 @@ export const ASSETS = {
    regexes that tag its front legs / back legs / head — nothing else changes.
    `default` is the best-effort fallback when a model has no entry. */
 export const BONEMAP = {
-  cat:     { frontLeg: /F[LR]/, backLeg: /B[LR]/, head: /^head/i, tail: /^Bone002/ },
-  default: { frontLeg: /(front|fore).*(leg|paw|arm|hand)|F[LR]\b/i, backLeg: /(back|hind|rear).*(leg|paw)|B[LR]\b/i, head: /head|skull|neck/i, tail: /tail/i },
+  // frontLeg/backLeg = the paw bones (used for hand-like action poses).
+  // legRoot = the actual limb chains (hip→knee→ankle→foot) that bend at a knee,
+  // used for the procedural walk step. Classified front/back/left/right by the
+  // foot's local position at map time.
+  cat:     { frontLeg: /F[LR]/, backLeg: /B[LR]/, head: /^head/i, tail: /^Bone002/, legRoot: /^Bone(_07|009|012|015)/ },
+  default: { frontLeg: /(front|fore).*(leg|paw|arm|hand)|F[LR]\b/i, backLeg: /(back|hind|rear).*(leg|paw)|B[LR]\b/i, head: /head|skull|neck/i, tail: /tail/i, legRoot: /(hip|thigh|upperleg|femur)/i },
 };
 
 /* ---------- arena ----------
@@ -236,6 +240,10 @@ export const ANIM = {
   limpTailDroop: 0.35, // tail goes slack
   // jump: tuck the legs in the air so a leap reads as a leap, not a slide up
   airTuckFront: 0.75, airTuckBack: 0.6,
+  // procedural walk step on the real limb chains (hip swing + knee bend) → the
+  // legs actually step and bend at a knee instead of the body gliding
+  legSwing: 0.55,   // hip fore/aft amplitude
+  kneeBend: 0.8,    // knee bend on the lift
 };
 
 /* ---------- CAMERA & RENDER ----------

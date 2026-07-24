@@ -475,6 +475,7 @@ export class Player {
       pull:  this.grabbing ? (Math.sin(performance.now() * 0.001 * GRAB.tugFreq) * 0.5 + 0.5) : 0,
       turn:  this._turnRate,
       limp:  this._koPose,
+      stride: this._gait,
     });
     // fallback stand-in has no clips → give it a little walk bob for life
     if (this.cat.fallback && this.tumble <= 0) {
