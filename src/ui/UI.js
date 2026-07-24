@@ -97,7 +97,16 @@ export class UI {
         <div class="who">${p ? (isYou ? '나' : p.name) : '빈자리'}</div>
         ${isYou ? '<div class="rdy">준비 완료 ✓ · 탭해서 색 변경</div>'
                 : `<div class="tag">${p ? (p.host ? '방장' : (p.connected ? '플레이어' : '연결 끊김…')) : '봇 자동참가'}</div>`}`;
-      if (isYou) { const cur = p.color; el.style.cursor = 'pointer'; el.addEventListener('click', () => g.net.setColor((cur + 1) % TEAMS.length)); }
+      if (isYou) {
+        el.style.cursor = 'pointer';
+        el.addEventListener('click', () => {
+          // cycle to the next colour NOT already taken by another player (no dupes)
+          const taken = new Set(pres.players.filter(x => x.slot !== me.slot && x.connected).map(x => x.color));
+          let next = p.color;
+          for (let k = 1; k <= TEAMS.length; k++) { const c = (p.color + k) % TEAMS.length; if (!taken.has(c)) { next = c; break; } }
+          if (next !== p.color) g.net.setColor(next);
+        });
+      }
       slots.appendChild(el);
     }
     this._lobbyCards = [...slots.querySelectorAll('.portrait')].map((el, i) => ({ el, colorIndex: (bySlot[i] ? bySlot[i].color : i) }));
