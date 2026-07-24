@@ -42,6 +42,10 @@ export class Cat {
     this.hasLoco = !!(this.walk && this.run && this.idle);   // has a full locomotion set → skip procedural gait
     [this.idle, this.walk, this.run].forEach(a => { if (a) { a.play(); a.setEffectiveWeight(0); } });
     this._act = null;   // one-shot action clip (Attack / HitReact / Death) overriding loco
+    // idle fidgets: after standing still a while, play a look-around / eat / head-low
+    // variant so a resting cat isn't a frozen loop. Interrupted the moment it moves.
+    this.fidgets = ['Idle_2', 'Idle_2_HeadLow', 'Eating'].filter(n => this.clips[n]);
+    this._idleT = 0; this._idleWait = 4 + Math.random() * 5;
     this._bob = 0;
 
   }
@@ -180,15 +184,38 @@ export class Cat {
 
     this.mixer.update(dt);
 
+    // a resting cat fidgets: idle → (wait) → look-around/eat → idle. Interrupted
+    // the instant it starts moving / acting so it never blocks responsiveness.
+    const resting = this.hasLoco && onGround && speed < ANIM.idleSpeed && !s.grabbed
+      && acting < 0.05 && flail < 0.05 && rear < 0.5 && limp < 0.05;
+    if (this._act && this._act.fidget && !resting) { this._act.a.stop(); this._act = null; }
+    else if (!this._act && resting && this.fidgets.length) {
+      this._idleT += dt;
+      if (this._idleT >= this._idleWait) {
+        this._idleT = 0; this._idleWait = 5 + Math.random() * 6;
+        this.playAction(this.fidgets[(Math.random() * this.fidgets.length) | 0], false, 1);
+        if (this._act) this._act.fidget = true;
+      }
+    } else if (!resting) this._idleT = 0;
+
     // a one-shot action clip (Attack/HitReact/Death) owns the pose while it runs
     if (this._act) {
       const finished = !this._act.hold && this._act.a.time >= this._act.dur - 0.02;
       if (finished) { this._act.a.stop(); this._act = null; }
       else {
-        if (this.idle) this.idle.setEffectiveWeight(0);
         if (this.walk) this.walk.setEffectiveWeight(0);
         if (this.run) this.run.setEffectiveWeight(0);
-        this._act.a.setEffectiveWeight(1);
+        if (this._act.fidget) {
+          // fidget: ease in/out against idle so the resting cat morphs into the
+          // look-around instead of snapping (both are calm rest poses).
+          const tt = this._act.a.time, dur = this._act.dur, r = 0.3;
+          const w = Math.min(1, tt / r, (dur - tt) / r);
+          this._act.a.setEffectiveWeight(w);
+          if (this.idle) this.idle.setEffectiveWeight(1 - w);
+        } else {
+          if (this.idle) this.idle.setEffectiveWeight(0);
+          this._act.a.setEffectiveWeight(1);
+        }
         return;   // clip drives everything → skip loco blend + procedural poses
       }
     }
