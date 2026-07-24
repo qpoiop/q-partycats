@@ -79,12 +79,14 @@ export class Player {
 
   /** Apply an external knockback and open the knock window so the
       movement controller doesn't immediately cancel it. */
-  hit(ix, iy, iz, { tumble = 0, axis = null } = {}) {
+  hit(ix, iy, iz, { tumble = 0, axis = null, stagger = false } = {}) {
     this.body.applyImpulse(V(ix, iy, iz), true);
     this.knockTimer = MOVE.knockWindow;
     this.onGround = false;
     const impact = Math.hypot(ix, iz) / this.mass();   // horizontal Δspeed
-    if (impact >= KNOCKDOWN.threshold) {
+    // `stagger` = a light attack (punch): it pushes + staggers but never floors,
+    // no matter how hard, so knockdowns are reserved for the heavy moves.
+    if (impact >= KNOCKDOWN.threshold && !stagger) {
       // solid hit → knocked down (tumbles, can't act, gets up after a delay)
       this.knockdown = Math.min(KNOCKDOWN.maxTime, KNOCKDOWN.minTime + (impact - KNOCKDOWN.threshold) * KNOCKDOWN.perSpeed);
       this._koSign = ix >= 0 ? 1 : -1;   // flop in the direction of the blow

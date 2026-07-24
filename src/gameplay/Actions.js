@@ -72,7 +72,7 @@ export class Actions {
       if (d < ABIL.punchReach && d > 1e-3 && (dx * dir.x + dz * dir.z) / d > ABIL.punchArc) {
         const nx = dx / d, nz = dz / d, om = o.mass();
         o.hit(nx * ABIL.punchKnock * om, ABIL.punchLift * om, nz * ABIL.punchKnock * om,
-          { tumble: 0.9, axis: new THREE.Vector3(nz, 0.2, -nx) });
+          { tumble: 0.9, axis: new THREE.Vector3(nz, 0.2, -nx), stagger: true });   // punch staggers, never floors
         this.game.fx.dust(op, 0xffffff, 12, 0.9); hit = true;
       }
     }
