@@ -113,7 +113,8 @@ export const MOVE = {
   airSpeed: 5.4,       // target speed while airborne
   gain: 13,            // ground velocity-spring stiffness (force toward target)
   gainAir: 5,          // weaker air control
-  brake: 9,            // coast-to-stop force when no input
+  brake: 4.5,          // coast-to-stop force when no input — soft so the cat slides
+                       // to a halt with momentum (물컹), not a hard snap-stop (급정거)
   accelGround: 55,     // (legacy — unused by the force controller)
   accelAir: 18,
   frictionDecel: 34,   // m/s^2 braking when no input on ground
