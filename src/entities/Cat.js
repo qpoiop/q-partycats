@@ -164,11 +164,14 @@ export class Cat {
     // grabber tug — yank the raised paws in on the pull beat (drags the victim)
     if (pull > 0.02) for (const leg of fl) this._rot(leg, -pull * GRAB.tugArm, 0, 0);
 
-    // PUNCH (주먹치기) — lead paw swings forward in the sagittal plane (no head
-    // wobble, no wild twist — a clean straight jab)
+    // PUNCH (주먹치기) — cock the paw back (anticipation) then drive it forward
+    // through the strike, then return. The wind-up is what sells the hit.
     if (punch > 0.02 && fl.length) {
-      const sw = Math.sin(Math.min(1, punch) * Math.PI);   // 0→1→0 over the swing
-      this._rot(fl[0], -1.35 * sw, 0, 0);
+      const phase = 1 - Math.min(1, punch);                       // 0→1 elapsed
+      const cock = Math.max(0, 1 - phase / 0.3);                  // 1 at start → 0 by 30%
+      const swing = Math.sin(THREE.MathUtils.clamp(phase / 0.8, 0, 1) * Math.PI);  // peaks at the strike frame
+      this._rot(fl[0], 0.6 * cock - 1.6 * swing, 0, 0);           // back, then forward
+      if (fl[1]) this._rot(fl[1], 0.3 * cock, 0, 0);              // off paw loads with the wind-up
     }
 
     // FLYING KICK (날라차기) — front paws thrust forward, hind legs kick back

@@ -23,6 +23,7 @@ export class LobbyView {
 
     this.cats = teams.map(t => {
       const c = new Cat(proto, t.hex);
+      c.model.scale.multiplyScalar(0.8);   // smaller in the select card (was filling it)
       c.model.visible = false;
       this.scene.add(c.model);
       if (c.walk) { c.walk.play(); c.walk.setEffectiveWeight(0.22); c.walk.timeScale = 0.55; }

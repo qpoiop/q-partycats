@@ -16,7 +16,13 @@ export class Actions {
   }
 
   jump(p) {
-    if (p.grabbedBy || p.knockdown > 0 || !p.alive || !p.onGround) return;
+    if (p.grabbedBy || p.knockdown > 0 || !p.alive || !p.onGround || p._jumpT > 0) return;
+    p._jumpT = ABIL.jumpAnticip;   // crouch first (anticipation); Player fires jumpLaunch when it expires
+  }
+
+  /** The actual launch, fired after the crouch (Player.preStep). */
+  jumpLaunch(p) {
+    if (!p.alive || p.grabbedBy || p.knockdown > 0) return;
     const v = p.vel();
     p.body.setLinvel(V(v.x, ABIL.jumpVel, v.z), true);
     p.onGround = false; p.squash = ABIL.jumpSquash;

@@ -65,6 +65,7 @@ export class Player {
     this._leanVX = 0; this._leanVZ = 0; // …and velocity (underdamped → wobble/overshoot)
     this._wasGround = true; this._prevVy = 0;   // landing-squash detection
     this._gait = 0;   // stride phase for the gait bob/weight-shift
+    this._jumpT = 0;  // jump anticipation (crouch) timer
     this._koPose = 0; this._koSign = 1;   // knockdown flop ramp (smooth fall-over / get-up)
     this._mashPulse = 0;                  // struggle-mash flail spike (decays)
     this.knockdown = 0;   // >0 = downed: can't act, must get up
@@ -169,6 +170,12 @@ export class Player {
     if (this.grabCd > 0) this.grabCd -= dt;
     if (this.knockdown > 0) this.knockdown -= dt;
     if (this._mashPulse > 0) this._mashPulse = Math.max(0, this._mashPulse - dt * 4.5);
+    // jump anticipation: hold a crouch, then launch (springy, not instant)
+    if (this._jumpT > 0) {
+      this._jumpT -= dt;
+      this.squash = ABIL.jumpCrouch;   // compress before the leap
+      if (this._jumpT <= 0) this.game.actions.jumpLaunch(this);
+    }
     // grabber: grip drains over time, faster while the victim struggles
     if (this.grabbing) {
       this.grip -= (GRAB.gripDrainBase + GRAB.gripDrainStruggle * this.grabbing.struggle) * dt;

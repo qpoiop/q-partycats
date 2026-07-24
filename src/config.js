@@ -111,6 +111,8 @@ export const MOVE = {
 export const ABIL = {
   jumpVel: 7.6,
   jumpSquash: -0.35,
+  jumpAnticip: 0.11,   // crouch time before the launch (anticipation → springy jump)
+  jumpCrouch: 0.34,    // how deep the pre-jump crouch compresses
 
   // dash / flying kick
   dashCd: 1.2,
