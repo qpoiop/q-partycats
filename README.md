@@ -4,9 +4,28 @@
 브라우저(WebGL)에서 설치 없이 즉시 플레이. **Three.js**(렌더) + **Rapier3D**(물리) + 커스텀 게임 루프.
 
 claude.ai 디자인 프로토타입(`game.html` / `game.js`)을 **상용 기반 구조로 재설계**하고,
-렌더링 거리·모델 이동/속도의 부자연스러움을 개선한 버전입니다.
+애니메이션 동물 리그·물리 전투·이동감·로비를 파티 애니멀즈급으로 다듬은 버전입니다.
 
-![PARTY CATS 홈 화면](docs/img/pc_home.jpg)
+![PARTY CATS — 아레나와 캐릭터](docs/img/hero.jpg)
+> 인게임 렌더: 둥근 잔디 아레나 + 팀별 색으로 틴트된 4마리(여우·늑대·허스키·시바). 밀치고 잡고 던져 링 밖으로.
+
+## 게임플레이
+
+6종 동물(여우·늑대·허스키·시바·사슴·알파카) 중 하나를 고르고, 팀 색을 정해 최대 4인이 아레나에서 맞붙습니다.
+**색상·캐릭터는 서로 겹치지 않게** 배정되며(온라인은 서버가 강제, 선점된 건 잠금 표시), 라운드제(Best-of-N)로 진행합니다.
+
+### 조작 & 기술
+| 입력 | 기술 | 효과 |
+|---|---|---|
+| 이동 | 걷기/달리기 | 관성 있는 물컹한 가감속(급정거 X), 코너에서 몸이 안쪽으로 뱅킹 |
+| 잡기 | 잡기 → 다시 눌러 던지기 | 잡은 채 **빙빙 돌면 차지**돼 더 멀리 던짐(최대 ~2.2×) |
+| 박치기 | 머리로 들이받기 | 밀치기(스태거, 안 눕힘) |
+| 대시 + 박치기 | **돌진 박치기** | 운동량 실린 램 → 넉다운 |
+| 점프 + 대시 | **날라차기** | 최강 피니셔, 크게 날려버림 |
+| 점프 + 잡기 | **슬라이딩** | 낮은 태클로 넘어뜨림(트립) |
+
+넉다운 계층: **날라차기 > 슬라이딩 > 돌진 박치기**. 가벼운 박치기·대시는 밀어내기용.
+액션은 실제 클립(Attack/Jump/Land/HitReact/Death) + 절차적 포즈로 표현하고, 가만히 있으면 두리번거리는 아이들 fidget이 재생됩니다.
 
 ## 실행
 
@@ -19,15 +38,17 @@ npm run preview   # 빌드 결과 미리보기
 
 ## 에셋 배치
 
-3D 모델은 저장소에 포함되어 있지 않습니다. 아래 두 파일을 `public/scene/` 에 넣으세요:
+캐릭터는 애니메이션이 포함된 Quaternius 동물팩(자체 포함 `.gltf`, 리그·클립 동일)을 사용합니다.
+6종이 `public/scene/` 에 있습니다(저장소에 커밋됨):
 
 ```
-public/scene/low-poly_oldxian_comix_cat.glb   # 캐릭터
-public/scene/forest_house.glb                 # 아레나 배경 소품
+public/scene/Fox.gltf  Wolf.gltf  Husky.gltf  ShibaInu.gltf  Deer.gltf  Alpaca.gltf
+public/scene/water_animation.glb   # 바다 (용량 커서 .gitignore — 별도 배치)
 ```
 
-경로/파일명은 `src/config.js` 의 `ASSETS` 에서 관리합니다. **에셋이 없어도 실행됩니다** —
-`AssetManager` 가 절차적(procedural) 대체 모델로 자동 폴백하므로 아트 반영 전에도 로직/물리 검증이 가능합니다.
+맵의 통나무집·잔디·꽃은 절차적으로 생성됩니다(별도 소품 GLB 불필요). 경로는 `src/config.js` 의
+`ANIMALS` / `ASSETS` 에서 관리합니다. **에셋이 없어도 실행됩니다** — `AssetManager` 가
+절차적 대체 모델로 자동 폴백하므로 아트 반영 전에도 로직/물리 검증이 가능합니다.
 
 ## 아키텍처
 
@@ -62,7 +83,7 @@ src/
 ```
 
 ### 새 콘텐츠 추가 지점
-- **캐릭터/스킨**: `config.TEAMS` + `ASSETS`
+- **캐릭터**: `config.ANIMALS` 에 `{id,name,asset}` 추가 + 필요 시 `config.BONEMAP` 에 뼈 매핑 / **팀 색**: `config.TEAMS`
 - **맵**: `world/` 에 `{ addTo(scene), update(dt) }` 형태의 새 아레나 클래스
 - **능력**: `gameplay/Actions.js` 에 메서드 추가 후 `Input`/`Bot` 에서 바인딩
 - **밸런스**: 전부 `config.js`
