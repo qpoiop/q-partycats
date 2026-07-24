@@ -16,12 +16,23 @@ export const TEAMS = [
 
 export const BOT_NAMES = ['냥냥', '까칠', '치즈', '우당탕', '폭탄', '겁냥', '슈퍼', '발톱'];
 
-// ---------- asset registry (add characters/maps here) ----------
-export const ASSETS = {
-  cat:   'scene/Fox.gltf',   // Quaternius animated fox — real Idle/Walk/Gallop/Attack/Jump/HitReact clips
-  house: 'scene/forest_house.glb',
-  water: 'scene/water_animation.glb',
-};
+// ---------- character roster (selectable animals — Crazy-Arcade style) ----------
+// All share the same Quaternius rig + clip set (Idle/Walk/Gallop/Attack/Jump/
+// HitReact/Death), so one Cat class + one BONEMAP drives every animal.
+export const ANIMALS = [
+  { id: 'fox',    name: '여우',   asset: 'scene/Fox.gltf' },
+  { id: 'wolf',   name: '늑대',   asset: 'scene/Wolf.gltf' },
+  { id: 'husky',  name: '허스키', asset: 'scene/Husky.gltf' },
+  { id: 'shiba',  name: '시바',   asset: 'scene/ShibaInu.gltf' },
+  { id: 'deer',   name: '사슴',   asset: 'scene/Deer.gltf' },
+  { id: 'alpaca', name: '알파카', asset: 'scene/Alpaca.gltf' },
+];
+
+// ---------- asset registry ----------
+export const ASSETS = Object.assign(
+  Object.fromEntries(ANIMALS.map(a => [a.id, a.asset])),
+  { house: 'scene/forest_house.glb', water: 'scene/water_animation.glb' },
+);
 
 /* ---------- character bone maps (per model) ----------
    Procedural motion (rear-up, punch, kick, flail…) drives the rig by role, not

@@ -1,4 +1,4 @@
-import { TEAMS, ARENA, ABIL, MATCH } from '../config.js';
+import { TEAMS, ARENA, ABIL, MATCH, ANIMALS } from '../config.js';
 import { Engine } from './Engine.js';
 import { GameLoop } from './GameLoop.js';
 import { AssetManager, makeFallbackCat, makeFallbackHouse, makeFallbackWater } from './AssetManager.js';
@@ -62,17 +62,22 @@ export class Game {
     this.arena = new Arena(this.scene);
 
     this.assets = new AssetManager((p, t) => this.ui.setLoad(p, t));
-    this.ui.setLoad(0.32, '고양이 불러오는 중…');
-    await this.assets.loadModel('cat', makeFallbackCat);
-    // NOTE: the bundled forest_house.glb renders as dead trees + power poles
-    // (junk, not a house) → replaced by Arena._buildCabin(). Not loaded.
+    // load every selectable animal (they share the rig + clips)
+    for (let i = 0; i < ANIMALS.length; i++) {
+      this.ui.setLoad(0.3 + 0.4 * (i / ANIMALS.length), `${ANIMALS[i].name} 불러오는 중…`);
+      await this.assets.loadModel(ANIMALS[i].id, makeFallbackCat);
+    }
+    // NOTE: forest_house.glb renders as junk → Arena._buildCabin() instead.
     this.ui.setLoad(0.74, '바다 불러오는 중…');
     const water = await this.assets.loadModel('water', makeFallbackWater);
     this.arena.addWater(water);
 
     this.ui.setLoad(0.9, '초상화 렌더링…');
-    this.thumbs = renderPortraits(this.engine.renderer, this.assets.get('cat'), this.teams);
-    this.lobbyView = new LobbyView(document.getElementById('lobbyfx'), this.assets.get('cat'), this.teams);
+    // one portrait set per animal: thumbs[animalId][colorIdx]
+    this.thumbs = {};
+    for (const a of ANIMALS) this.thumbs[a.id] = renderPortraits(this.engine.renderer, this.assets.get(a.id), this.teams);
+    this.lobbyView = new LobbyView(document.getElementById('lobbyfx'), this.assets, this.teams);
+    this.playerAnimal = ANIMALS[0].id;   // human's chosen character (lobby)
 
     // attract demo: fill the home screen with idle cats
     this.match.buildPlayers();

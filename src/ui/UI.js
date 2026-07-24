@@ -1,4 +1,4 @@
-import { TEAMS, BOT_NAMES, MATCH, ABIL, GRAB } from '../config.js';
+import { TEAMS, BOT_NAMES, MATCH, ABIL, GRAB, ANIMALS } from '../config.js';
 
 const $ = s => document.querySelector(s);
 
@@ -64,22 +64,42 @@ export class UI {
   renderLobby() {
     const g = this.game;
     if (g.online && g.roomPresence) return this._renderLobbyOnline();
+    if (g.humanColor >= TEAMS.length) g.humanColor = 0;
+    // roster mirrors Match.buildPlayers so the previews match the actual game:
+    // you = your chosen animal + colour; bots get distinct animals (cycled).
+    const order = [g.humanColor, ...[0, 1, 2, 3].filter(c => c !== g.humanColor)];
+    const hIdx = Math.max(0, ANIMALS.findIndex(a => a.id === g.playerAnimal));
+    const roster = [];
+    for (let i = 0; i < g.config.count; i++) roster.push({
+      color: order[i],
+      animal: i === 0 ? g.playerAnimal : ANIMALS[(hIdx + i) % ANIMALS.length].id,
+      name: i === 0 ? '나' : BOT_NAMES[(i * 2) % BOT_NAMES.length],
+      isYou: i === 0,
+    });
+
+    // character-select strip (portrait thumbs, tinted to my colour)
+    const cs = $('#charSel');
+    cs.innerHTML = ANIMALS.map(a => `<button class="chip ${a.id === g.playerAnimal ? 'on' : ''}" data-a="${a.id}"><img src="${g.thumbs[a.id][g.humanColor]}" alt="${a.name}"><span class="nm">${a.name}</span></button>`).join('');
+    cs.querySelectorAll('.chip').forEach(b => b.onclick = () => { g.playerAnimal = b.dataset.a; this.renderLobby(); });
+
+    // colour-select swatches
+    const cl = $('#colorSel');
+    cl.innerHTML = TEAMS.map((t, ci) => `<button class="sw ${ci === g.humanColor ? 'on' : ''}" data-c="${ci}" style="background:${t.css}" aria-label="${t.name}"></button>`).join('');
+    cl.querySelectorAll('.sw').forEach(b => b.onclick = () => { g.humanColor = +b.dataset.c; this.renderLobby(); });
+
+    // player cards
     const slots = $('#slots'); slots.innerHTML = '';
-    if (g.humanColor >= g.config.count) g.humanColor = 0;
-    // Pick your cat directly: one fixed card per colour. The card you tap is
-    // "you" (name under the thumbnail = ready); the rest fill with bots.
-    for (let i = 0; i < g.config.count; i++) {
-      const isYou = i === g.humanColor; const t = TEAMS[i];
-      const slot = document.createElement('div');
-      slot.className = 'slot filled' + (isYou ? ' you' : '');
-      slot.innerHTML = `<div class="badge">P${i + 1}</div><div class="glow" style="background:${t.css}"></div>
+    roster.forEach((p, i) => {
+      const t = TEAMS[p.color], an = ANIMALS.find(a => a.id === p.animal);
+      const el = document.createElement('div');
+      el.className = 'slot filled' + (p.isYou ? ' you' : '');
+      el.innerHTML = `<div class="badge">P${i + 1}</div><div class="glow" style="background:${t.css}"></div>
         <div class="portrait"></div>
-        <div class="who">${isYou ? '나' : BOT_NAMES[(i * 2) % BOT_NAMES.length]}</div>
-        ${isYou ? '<div class="rdy">준비 완료 ✓</div>' : '<div class="tag">봇 (자동 참가)</div>'}`;
-      slot.addEventListener('click', () => { g.humanColor = i; this.renderLobby(); });
-      slots.appendChild(slot);
-    }
-    this._lobbyCards = [...slots.querySelectorAll('.portrait')].map((el, i) => ({ el, colorIndex: i }));
+        <div class="who">${p.name}</div>
+        ${p.isYou ? `<div class="rdy">${an.name} · 준비 완료 ✓</div>` : `<div class="tag">봇 · ${an.name}</div>`}`;
+      slots.appendChild(el);
+    });
+    this._lobbyCards = [...slots.querySelectorAll('.portrait')].map((el, i) => ({ el, animalId: roster[i].animal, colorIndex: roster[i].color }));
     this.renderPills();
   }
 

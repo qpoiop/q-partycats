@@ -128,6 +128,20 @@
      background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1); transition:transform .25s, box-shadow .25s, border-color .25s; }
   .slot.filled{ transform:translateY(0); }
   .slot.you{ border-color:#ffd98a; box-shadow:0 0 0 3px rgba(255,217,138,.28), 0 16px 40px rgba(0,0,0,.35); }
+  .picks{ display:flex; gap:24px; margin-top:16px; flex-wrap:wrap; align-items:flex-start; }
+  .pickrow{ display:flex; flex-direction:column; gap:7px; }
+  .pickrow>.lab{ font-size:11px; letter-spacing:1px; opacity:.72; font-weight:700; text-transform:uppercase; }
+  .chars{ display:flex; gap:8px; flex-wrap:wrap; }
+  .chip{ width:60px; height:60px; border-radius:14px; border:2px solid rgba(255,255,255,.14); background:rgba(255,255,255,.06);
+     cursor:pointer; overflow:hidden; padding:0; position:relative; transition:transform .15s, border-color .15s; }
+  .chip img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .chip .nm{ position:absolute; left:0; right:0; bottom:0; font-size:9px; text-align:center; background:rgba(0,0,0,.5); padding:1px 0; }
+  .chip:hover{ transform:translateY(-2px); border-color:rgba(255,255,255,.3); }
+  .chip.on{ border-color:#ffd98a; box-shadow:0 0 0 2px rgba(255,217,138,.32); }
+  .colors{ display:flex; gap:11px; align-items:center; height:60px; }
+  .sw{ width:36px; height:36px; border-radius:50%; cursor:pointer; border:2px solid rgba(255,255,255,.32); box-shadow:0 3px 8px rgba(0,0,0,.3); transition:transform .15s; }
+  .sw:hover{ transform:scale(1.08); }
+  .sw.on{ border-color:#fff; transform:scale(1.16); box-shadow:0 0 0 3px rgba(255,255,255,.25); }
   .slots.pickable .slot{ cursor:pointer; }
   .slots.pickable .slot:hover{ transform:translateY(-3px); border-color:rgba(255,255,255,.28); }
   .slot .rdy{ position:relative; z-index:1; display:inline-block; margin-top:3px; font-size:12px; font-weight:800;
@@ -375,10 +389,14 @@
     <canvas id="lobbyfx"></canvas>
     <div class="panel glass">
       <div class="lb-head">
-        <div><div class="lb-title">대기실</div><div class="lb-sub">고양이를 골라 탭하세요 · 방 인원과 라운드를 정한 뒤 시작</div></div>
+        <div><div class="lb-title">대기실</div><div class="lb-sub">캐릭터와 색을 고르고 준비 → 시작</div></div>
         <div class="room"><div class="lab">Room Code</div><b id="roomCode">CAT-042</b><button class="copyc" id="copyCode">복사</button></div>
       </div>
-      <div class="slots pickable" id="slots"></div>
+      <div class="picks">
+        <div class="pickrow"><div class="lab">캐릭터</div><div class="chars" id="charSel"></div></div>
+        <div class="pickrow"><div class="lab">색상</div><div class="colors" id="colorSel"></div></div>
+      </div>
+      <div class="slots" id="slots"></div>
       <div class="cfg">
         <div><div class="lab">방 인원 <span class="hint2">(빈 자리는 봇이 자동 참가)</span></div><div class="pills" id="countPills"></div></div>
         <div><div class="lab">라운드</div><div class="pills" id="roundPills"></div></div>

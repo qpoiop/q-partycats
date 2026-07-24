@@ -121,3 +121,6 @@
 - [ ] STAGE2: 액션에 실제 클립 — 주먹=Attack, 점프=Jump/Gallop_Jump, 맞기=Idle_HitReact, 넉다운=Death. 현재 절차적 오버레이(punch/kick/grab/clash 뼈회전)와 충돌/중복 정리.
 - [ ] STAGE3: 틴트 강도(여우 밝아서 팀색 약함) + 8개 꼬리뼈 활용 + 각 플레이어 다른 동물(Fox/Wolf/Husky/ShibaInu 등 = 진짜 "파티 애니멀즈") 옵션.
 - [ ] STAGE4: 여우 rest 방향/스케일 미세, 캡슐 vs 여우 비주얼 폭 재조정.
+- [x] STAGE2(멀티동물+로비): 동물 6종(여우/늑대/허스키/시바/사슴/알파카) 로스터(ANIMALS). 플레이어마다 다른 동물. 크레이지아케이드식 로비 = 캐릭터선택(초상화칩)+색상선택+준비. 각 동물 초상화 렌더(thumbs[animalId][color]). LobbyView (동물,색) 조합 캐싱. 검증: 4마리 다른 동물 인게임, 로비 선택 동작.
+- [ ] STAGE3: 액션 실제 클립 — 주먹=Attack, 점프=Jump, 맞기=HitReact, 넉다운=Death 원샷 재생 + 절차오버레이 정리.
+- [ ] STAGE4: 온라인 로비에도 동물 선택(워커 roster에 animal 추가) + 준비토글. 동물별 스케일 미세(사슴 크다). gltf→glb+draco로 로드 경량화.

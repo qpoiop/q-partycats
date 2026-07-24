@@ -1,4 +1,4 @@
-import { ARENA, BODY, BOT_NAMES, MATCH } from '../config.js';
+import { ARENA, BODY, BOT_NAMES, MATCH, ANIMALS } from '../config.js';
 import { Player } from '../entities/Player.js';
 
 const V = (x, y, z) => ({ x, y, z });
@@ -23,10 +23,13 @@ export class Match {
     const g = this.game;
     const h = g.humanColor;
     const order = [h, ...[0, 1, 2, 3].filter(c => c !== h)];
+    // human plays their chosen animal; bots get distinct ones (cycled)
+    const hIdx = Math.max(0, ANIMALS.findIndex(a => a.id === g.playerAnimal));
     for (let i = 0; i < g.config.count; i++) {
       g.players.push(new Player(g, {
         idx: i, teamIdx: order[i], isBot: i > 0,
         name: i > 0 ? BOT_NAMES[(i * 2) % BOT_NAMES.length] : '나',
+        animal: i === 0 ? g.playerAnimal : ANIMALS[(hIdx + i) % ANIMALS.length].id,
       }));
     }
   }
@@ -39,7 +42,7 @@ export class Match {
     const g = this.game;
     const bySlot = {}; (roster || []).forEach(r => { bySlot[r.slot] = r; });
     const myColor = bySlot[localSlot] ? bySlot[localSlot].color : g.humanColor;
-    g.players.push(new Player(g, { idx: 0, teamIdx: myColor, isBot: false, name: '나', slot: localSlot, control: 'local' }));
+    g.players.push(new Player(g, { idx: 0, teamIdx: myColor, isBot: false, name: '나', slot: localSlot, control: 'local', animal: g.playerAnimal }));
     let idx = 1;
     for (let slot = 0; slot < g.config.count; slot++) {
       if (slot === localSlot) continue;
@@ -51,6 +54,7 @@ export class Match {
         isBot: !real,
         name: real ? r.name : BOT_NAMES[(idx * 2) % BOT_NAMES.length],
         control: real ? (isHost ? 'remote' : 'net') : (isHost ? 'bot' : 'net'),
+        animal: ANIMALS[slot % ANIMALS.length].id,
       }));
       idx++;
     }

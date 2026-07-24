@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { BODY, MOVE, ANIM, GRAB, KNOCKDOWN, EDGE, ABIL } from '../config.js';
+import { BODY, MOVE, ANIM, GRAB, KNOCKDOWN, EDGE, ABIL, ANIMALS } from '../config.js';
 import { Cat } from './Cat.js';
 
 const FOOT = BODY.footOffset;
@@ -15,7 +15,7 @@ const V = (x, y, z) => ({ x, y, z });
    pauses steering so knockbacks stay punchy and physical.
    ============================================================ */
 export class Player {
-  constructor(game, { idx, teamIdx, isBot, name, spawn, slot, control }) {
+  constructor(game, { idx, teamIdx, isBot, name, spawn, slot, control, animal }) {
     this.game = game;
     this.idx = idx;
     this.slot = slot ?? idx;          // network identity (stable across clients)
@@ -23,12 +23,13 @@ export class Player {
     this.team = teamIdx;
     this.name = name;
     this.isBot = isBot;
+    this.animal = animal || ANIMALS[0].id;
 
     const t = game.teams[teamIdx];
     this.css = t.css; this.hex = t.hex;
 
-    // visual
-    this.cat = new Cat(game.assets.get('cat'), t.hex);
+    // visual — the player's chosen animal, tinted to the team colour
+    this.cat = new Cat(game.assets.get(this.animal) || game.assets.get(ANIMALS[0].id), t.hex);
     this.group = new THREE.Group();
     this.tilt = new THREE.Group();
     this.tilt.add(this.cat.model);
