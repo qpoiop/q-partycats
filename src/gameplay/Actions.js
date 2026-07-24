@@ -26,6 +26,9 @@ export class Actions {
     const v = p.vel();
     p.body.setLinvel(V(v.x, ABIL.jumpVel, v.z), true);
     p.onGround = false; p.squash = ABIL.jumpSquash;
+    // real leap clip on rigged models — timed (×1.1) so the animation's arc
+    // spans the physical hang-time (2·jumpVel/g ≈ 0.84s vs clip 0.93s). No-op on old cat.
+    p.cat.playAction('Gallop_Jump', false, 1.1);
     this.game.fx.dust(p.pos(), p.hex, 10, 0.5);
   }
 
