@@ -308,6 +308,9 @@ export class Player {
   }
 
   _dashStrike() {
+    // a dash+headbutt is handled as the 돌진 박치기 ram (Actions.punchStrike) — skip
+    // the plain dash shove so it isn't a weaker double-hit.
+    if (this.punching > 0 && !this.dashAir && this.sliding <= 0) return;
     const me = this.pos();
     const reach = BODY.capRadius * 2 + 0.15;
     for (const o of this.game.players) {

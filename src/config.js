@@ -153,6 +153,10 @@ export const ABIL = {
   punchLift: 2.8,
   punchTime: 0.34,     // pose duration — long enough to read the swing
   punchStrikeFrac: 0.4,// contact lands at this fraction into the swing (windup → hit), not instantly
+  // 돌진 박치기 (charging ram): a headbutt DURING a dash carries the dash momentum
+  // → a heavy hit that KNOCKS DOWN (vs the plain stagger of a standing headbutt).
+  ramKnock: 8,         // > KNOCKDOWN.threshold (5.5) so it floors, not just staggers
+  ramLift: 3.4,
 
   // slide (슬라이딩) = jump+grab → a flat flying dive (prone, limbs stretched)
   slideVel: 13,

@@ -82,9 +82,15 @@ export class Actions {
       const dx = op.x - me.x, dz = op.z - me.z, d = Math.hypot(dx, dz);
       if (d < ABIL.punchReach && d > 1e-3 && (dx * dir.x + dz * dir.z) / d > ABIL.punchArc) {
         const nx = dx / d, nz = dz / d, om = o.mass();
-        o.hit(nx * ABIL.punchKnock * om, ABIL.punchLift * om, nz * ABIL.punchKnock * om,
-          { tumble: 0.9, axis: new THREE.Vector3(nz, 0.2, -nx), stagger: true });   // punch staggers, never floors
-        this.game.fx.dust(op, 0xffffff, 12, 0.9); hit = true;
+        // headbutt during a dash = 돌진 박치기: dash momentum turns the stagger into
+        // a flooring ram (no stagger flag → knockdown). A standing headbutt just shoves.
+        const ram = p.dashTimer > 0;
+        const knock = ram ? ABIL.ramKnock : ABIL.punchKnock;
+        const lift = ram ? ABIL.ramLift : ABIL.punchLift;
+        o.hit(nx * knock * om, lift * om, nz * knock * om,
+          ram ? { tumble: 1, axis: new THREE.Vector3(nz, 0.3, -nx) }
+              : { tumble: 0.9, axis: new THREE.Vector3(nz, 0.2, -nx), stagger: true });
+        this.game.fx.dust(op, 0xffffff, ram ? 18 : 12, ram ? 1.1 : 0.9); hit = true;
       }
     }
     const at = p.pos();
