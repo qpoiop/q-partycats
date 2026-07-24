@@ -277,7 +277,7 @@ export const CAMERA = {
   minDist: 12,
   maxDist: 64,
   menuElevation: 0.42,
-  playElevation: 0.6,    // raised angle → clearer read of the arena from above
+  playElevation: 0.82,   // steeper, more top-down (was too oblique)
   fallElevation: 0.28,   // tilt down to watch the plunge into the sea
   followLerp: 2.4,       // smoother follow → fast-flung cats don't jerk the camera
   followClamp: 5.5,      // how far the framing centroid may drift from centre

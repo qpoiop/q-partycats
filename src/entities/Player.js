@@ -67,6 +67,7 @@ export class Player {
     this._gait = 0;   // stride phase for the gait bob/weight-shift
     this._jumpT = 0;  // jump anticipation (crouch) timer
     this._koPose = 0; this._koSign = 1;   // knockdown flop ramp (smooth fall-over / get-up)
+    this._airSpin = 0;                    // rotation while flung through the air
     this._mashPulse = 0;                  // struggle-mash flail spike (decays)
     this.knockdown = 0;   // >0 = downed: can't act, must get up
     this.teeter = 0; this._teetered = false;   // hanging/flailing at the ledge
@@ -380,8 +381,14 @@ export class Player {
     this.squash += (0 - this.squash) * Math.min(1, dt * 8);
     this.cat.model.position.y = this.cat._baseY;   // feet-on-ground base; branches add bob/hop
     // knockdown ramp → flops over and gets up smoothly instead of snapping flat
-    const koTarget = this.knockdown > 0 ? 1 : 0;
-    this._koPose += (koTarget - this._koPose) * Math.min(1, dt * (koTarget ? 11 : 6));
+    // the side-flop lie only engages once the cat has SETTLED (on the ground and
+    // slow); while it's still flying or sliding fast from the hit it tumbles
+    // dynamically instead of floating flat on its side.
+    const koSpeed = Math.hypot(v.x, v.z);
+    const settled = this.onGround && koSpeed < 2.5;
+    const koTarget = (this.knockdown > 0 && settled) ? 1 : 0;
+    this._koPose += (koTarget - this._koPose) * Math.min(1, dt * (koTarget ? 12 : 6));
+    if (this.knockdown <= 0) this._airSpin = 0;
     let sx = 1, sy = 1;
     if (this.teeter > 0) {
       // hanging on the lip → flail
@@ -401,13 +408,23 @@ export class Player {
       this.tilt.rotation.z += (0 - this.tilt.rotation.z) * Math.min(1, dt * 6);
       this.tilt.rotation.y += (0 - this.tilt.rotation.y) * Math.min(1, dt * 6);
       sy = 1 - this.squash; sx = 1 + this.squash * 0.5;
+    } else if (this.knockdown > 0 && !settled) {
+      // flung/sliding fast → tumble & spin dynamically (checked BEFORE the flop so
+      // a lingering koPose can't make it float flat mid-flight)
+      this._axisH.set(this.tumbleAxis.x, 0.35, this.tumbleAxis.z);
+      if (this._axisH.lengthSq() < 1e-4) this._axisH.set(1, 0.35, 0);
+      this._axisH.normalize();
+      this._airSpin += dt * (7 + koSpeed * 0.6);
+      this._koPose = 0;                          // drop any lingering flop while airborne
+      this.tilt.rotation.set(0, 0, 0);
+      this.tilt.rotateOnAxis(this._axisH, this._airSpin);
+      this.tumble = 1;
     } else if (this._koPose > 0.02) {
-      // downed → FLOP onto the side (roll about the forward axis) and lift the
-      // model by half its width so it lies flat ON the grass — no head-in-floor.
-      // Ramped by _koPose so it topples over and rises smoothly, not a snap.
+      // settled & downed → FLOP onto the side (roll about the forward axis), lifted
+      // so it lies flat ON the grass; ramped by _koPose (topple/rise, no snap).
       const e = this._koPose;
       this.tilt.rotation.set(0, 0, (Math.PI * 0.5) * this._koSign * e);
-      this.cat.model.position.y = this.cat._baseY * (1 - e) + 0.7 * e;   // blend base → side-flop rest
+      this.cat.model.position.y = this.cat._baseY * (1 - e) + 0.7 * e;
       this.tumble = 1;
     } else if (this.tumble > 0) {
       // a stagger/tip in the knock direction that rights itself — horizontal
