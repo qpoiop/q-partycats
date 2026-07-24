@@ -118,10 +118,10 @@
 
 ## ★ 새 모델(애니 있는 Quaternius 동물팩) 통합 — 유저 제공
 - [x] STAGE1: Fox.gltf(자체포함) 통합 — 실제 클립 Idle/Walk/Gallop 스피드 블렌드. BONEMAP.cat→fox 리그(FrontLowerLeg/BackLowerLeg/Head/Tail1). hasLoco 플래그로 절차적 gait/walkstep/head·tail 2차모션 스킵(클립이 처리). visualHeight 2.3(여우 길어서), 접지 feetY 0, 방향 +Z 정면 맞음. 로드/애니/틴트/접지 검증, 콘솔0.
-- [ ] STAGE2: 액션에 실제 클립 — 주먹=Attack, 점프=Jump/Gallop_Jump, 맞기=Idle_HitReact, 넉다운=Death. 현재 절차적 오버레이(punch/kick/grab/clash 뼈회전)와 충돌/중복 정리.
+- [x] STAGE2: 액션에 실제 클립 — 주먹=Attack, 맞기=Idle_HitReact, 넉다운=Death, 점프=Gallop_Jump 완료. (점프: jumpLaunch에서 Gallop_Jump ×1.1 재생 → 클립 leap 아크가 물리 행타임 2·jumpVel/g≈0.84s vs 클립0.93s에 싱크. 검증: 공중 전구간 클립활성, 착지시 자동 clear→loco, 착지스쿼시 유지. 옛모델 no-op.)
 - [ ] STAGE4: 여우 rest 방향/스케일 미세, 캡슐 vs 여우 비주얼 폭 재조정.
 - [x] STAGE2(멀티동물+로비): 동물 6종(여우/늑대/허스키/시바/사슴/알파카) 로스터(ANIMALS). 플레이어마다 다른 동물. 크레이지아케이드식 로비 = 캐릭터선택(초상화칩)+색상선택+준비. 각 동물 초상화 렌더(thumbs[animalId][color]). LobbyView (동물,색) 조합 캐싱. 검증: 4마리 다른 동물 인게임, 로비 선택 동작.
-- [ ] STAGE3: 액션 실제 클립 — 주먹=Attack, 점프=Jump, 맞기=HitReact, 넉다운=Death 원샷 재생 + 절차오버레이 정리.
+- [x] STAGE3: 액션 실제 클립 — 주먹=Attack, 점프=Gallop_Jump, 맞기=HitReact, 넉다운=Death 원샷 재생 완료.
 - [ ] STAGE4: 온라인 로비에도 동물 선택(워커 roster에 animal 추가) + 준비토글. 동물별 스케일 미세(사슴 크다). gltf→glb+draco로 로드 경량화.
 - [x] STAGE3(액션 클립): Cat 원샷 액션시스템(playAction, LoopOnce, 재생중 loco/절차 override+return). 주먹=Attack 클립, 맞기=HitReact 클립. 검증: 펀치 프레임8에 공격자 Attack + 피격자 HitReact 동시. hasLoco 아닌 옛모델은 no-op(절차 유지).
 - [x] STAGE3b(넉다운=Death): 정착+knockdown시 Death 클립(넘어져 눕기, hold), 일어나면 clearAction→loco. hasLoco는 koPose 대신 knockdown 직접 키잉(getup 재재생 버그 수정). 공중선 여전히 텀블. 검증: 날아감→착지 Death→일어남.
