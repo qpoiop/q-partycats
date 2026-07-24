@@ -69,11 +69,22 @@ export class Effects {
     this.group.add(m); this._streaks.push({ m, life: 0.28 });
   }
 
-  shake(a) { this.shakeAmt = Math.min(1.6, this.shakeAmt + a); }
+  /* Screen-wide juice (shake/flash) is gated by distance to the local player so
+     a scrap between two far-off bots doesn't rattle and flash the whole screen.
+     Pass `pos` for a world event; omit it for an intentional global effect. */
+  setFocus(x, z) { this._fx = x; this._fz = z; }
+  _proximity(pos) {
+    if (!pos || this._fx == null) return 1;
+    const d = Math.hypot(pos.x - this._fx, pos.z - this._fz);
+    return Math.max(0, Math.min(1, 1 - (d - 4) / 11));   // full ≤4u, none ≥15u
+  }
 
-  flash(a) {
+  shake(a, pos) { this.shakeAmt = Math.min(1.6, this.shakeAmt + a * this._proximity(pos)); }
+
+  flash(a, pos) {
     const el = this.flashEl; if (!el) return;
-    el.style.transition = 'none'; el.style.opacity = a;
+    const f = a * this._proximity(pos); if (f < 0.02) return;
+    el.style.transition = 'none'; el.style.opacity = f;
     requestAnimationFrame(() => { el.style.transition = 'opacity .35s'; el.style.opacity = 0; });
   }
 

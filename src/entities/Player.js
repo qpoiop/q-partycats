@@ -304,7 +304,7 @@ export class Player {
           (this.dashAir || sliding) ? { tumble: 1, axis: new THREE.Vector3(nz, 0.3, -nx) } : {});
         this.dashTimer *= 0.4;
         this.game.fx.dust(op, this.hex, 10, 0.9);
-        this.game.fx.shake(this.dashAir ? 0.6 : sliding ? 0.5 : 0.3);
+        this.game.fx.shake(this.dashAir ? 0.6 : sliding ? 0.5 : 0.3, op);
         if (o.grabbedBy) this.game.actions.releaseGrab(o.grabbedBy);
       }
     }

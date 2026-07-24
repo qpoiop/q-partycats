@@ -178,6 +178,8 @@ export class Game {
     // net I/O
     if (online) { if (client) this.mp.sendInput(); else this.mp.maybeSnapshot(dt); }
 
+    const lp = this.players[0];
+    if (lp && lp.group.visible) { const q = lp.pos(); this.fx.setFocus(q.x, q.z); }   // gate screen FX to near the local cat
     this.arena.update(dt);
     this.fx.update(dt);
     this.ui.updateBanner(dt);

@@ -82,7 +82,8 @@ export class Actions {
         this.game.fx.dust(op, 0xffffff, 12, 0.9); hit = true;
       }
     }
-    this.game.fx.shake(hit ? 0.5 : 0.15); if (hit) this.game.fx.flash(0.15);
+    const at = p.pos();
+    this.game.fx.shake(hit ? 0.5 : 0.15, at); if (hit) this.game.fx.flash(0.15, at);
   }
 
   /** Slide (슬라이딩) = grab pressed in mid-air → a low tackle lunge. */
@@ -129,7 +130,7 @@ export class Actions {
     t.knockTimer = MOVE.knockWindow;
     t.grabbedBy = null; p.grabbing = null; p.grabCd = GRAB.cd; p.grip = 0;
     t.tumble = 1; t.tumbleAxis.set(Math.random() - 0.5, 0.2, Math.random() - 0.5).normalize();
-    this.game.fx.dust(t.pos(), t.hex, 16, 1); this.game.fx.shake(0.55); this.game.fx.flash(0.18);
+    this.game.fx.dust(t.pos(), t.hex, 16, 1); this.game.fx.shake(0.55, p.pos()); this.game.fx.flash(0.18, p.pos());
   }
 
   /** Victim wins the tug-of-war: pops free and kicks the grabber back. */
@@ -142,7 +143,7 @@ export class Actions {
     t.hit(dx * GRAB.victimPopVel * tm, 3.2 * tm, dz * GRAB.victimPopVel * tm, {});      // victim pops free
     grabber.hit(-dx * GRAB.breakKick * gm, 1.5 * gm, -dz * GRAB.breakKick * gm, {});    // grabber kicked back
     grabber.grabCd = GRAB.breakStun; t.grabCd = GRAB.cd; t.struggle = 0; grabber.grip = 0;
-    this.game.fx.dust(tp, t.hex, 14, 1.1); this.game.fx.shake(0.4); this.game.fx.flash(0.12);
+    this.game.fx.dust(tp, t.hex, 14, 1.1); this.game.fx.shake(0.4, gp); this.game.fx.flash(0.12, gp);
   }
 
   /** Silent release (elimination / attract respawn) — no kick. */
