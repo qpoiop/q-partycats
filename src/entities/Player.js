@@ -367,7 +367,7 @@ export class Player {
       const now = performance.now() * 0.001;
       this.group.rotation.y = now * 1.1;                 // slow turn to show off
       const hop = Math.abs(Math.sin(now * 3.4));
-      this.cat.model.position.y = hop * 0.75;            // clear jumps
+      this.cat.model.position.y = this.cat._baseY + hop * 0.75;            // clear jumps
       this.tilt.rotation.set(-1.1, 0, 0);               // stand upright on hind legs (만세)
       this.tilt.scale.set(1 + (1 - hop) * 0.14, 1 - (1 - hop) * 0.14, 1 + (1 - hop) * 0.14);
       this.cat.updateAnimation(dt, { speed: 0, onGround: true, cheer: 1 });
@@ -378,7 +378,7 @@ export class Player {
     }
 
     this.squash += (0 - this.squash) * Math.min(1, dt * 8);
-    this.cat.model.position.y = 0;   // default; branches (knockdown/fallback) may lift
+    this.cat.model.position.y = this.cat._baseY;   // feet-on-ground base; branches add bob/hop
     // knockdown ramp → flops over and gets up smoothly instead of snapping flat
     const koTarget = this.knockdown > 0 ? 1 : 0;
     this._koPose += (koTarget - this._koPose) * Math.min(1, dt * (koTarget ? 11 : 6));
@@ -407,7 +407,7 @@ export class Player {
       // Ramped by _koPose so it topples over and rises smoothly, not a snap.
       const e = this._koPose;
       this.tilt.rotation.set(0, 0, (Math.PI * 0.5) * this._koSign * e);
-      this.cat.model.position.y = 0.7 * e;
+      this.cat.model.position.y = this.cat._baseY * (1 - e) + 0.7 * e;   // blend base → side-flop rest
       this.tumble = 1;
     } else if (this.tumble > 0) {
       // a stagger/tip in the knock direction that rights itself — horizontal
@@ -450,7 +450,7 @@ export class Player {
       if (this.onGround && gsp > 0.5) {
         this._gait += dt * BODY.gaitFreq * gsp;
         const sf = Math.min(1, gsp / MOVE.speed);
-        this.cat.model.position.y = Math.abs(Math.sin(this._gait)) * BODY.gaitBounce * sf;
+        this.cat.model.position.y = this.cat._baseY + Math.abs(Math.sin(this._gait)) * BODY.gaitBounce * sf;
         oz += Math.sin(this._gait * 0.5) * BODY.gaitRoll * sf;   // rock side to side
       }
       this.tilt.rotation.set(ox, 0, oz);
@@ -480,7 +480,7 @@ export class Player {
     // fallback stand-in has no clips → give it a little walk bob for life
     if (this.cat.fallback && this.tumble <= 0) {
       this.cat._bob += dt * (2 + sp * 2);
-      this.cat.model.position.y = this.onGround ? Math.abs(Math.sin(this.cat._bob)) * Math.min(0.12, sp * 0.03) : 0;
+      this.cat.model.position.y = this.cat._baseY + (this.onGround ? Math.abs(Math.sin(this.cat._bob)) * Math.min(0.12, sp * 0.03) : 0);
     }
 
     const distC = Math.hypot(t.x, t.z);

@@ -155,6 +155,10 @@ export class Cat {
       holder.position.x -= sx / this.legs.length;
       holder.position.z -= sz / this.legs.length;
     }
+    // Base vertical offset (feet on the ground). pose() resets model.position.y
+    // to this each frame and adds bob/hop on top — resetting to 0 (as it did)
+    // wiped this offset and sank the lower body into the floor.
+    this._baseY = holder.position.y;
   }
 
   /* Drive the visual from a semantic pose STATE (not a positional arg list) so
