@@ -114,10 +114,12 @@ export class UI {
     const myAnimalId = mine ? ANIMALS[(mine.animal || 0) % ANIMALS.length].id : g.playerAnimal;
     g.playerAnimal = myAnimalId;   // keep local pick in sync (used when the match builds)
 
-    // character-select strip — same control as offline, but pushes to the server
+    // character-select strip — same control as offline, but pushes to the server.
+    // animals taken by other players are locked (uniqueness, like colours).
+    const takenAnimals = new Set(pres.players.filter(x => me && x.slot !== me.slot && x.connected).map(x => x.animal));
     const cs = $('#charSel');
-    cs.innerHTML = ANIMALS.map((a, ai) => `<button class="chip ${a.id === myAnimalId ? 'on' : ''}" data-ai="${ai}"><img src="${g.thumbs[a.id][myColor]}" alt="${a.name}"><span class="nm">${a.name}</span></button>`).join('');
-    cs.querySelectorAll('.chip').forEach(b => b.onclick = () => { g.net.setAnimal(+b.dataset.ai); });
+    cs.innerHTML = ANIMALS.map((a, ai) => `<button class="chip ${a.id === myAnimalId ? 'on' : ''} ${takenAnimals.has(ai) ? 'taken' : ''}" data-ai="${ai}"><img src="${g.thumbs[a.id][myColor]}" alt="${a.name}"><span class="nm">${a.name}</span></button>`).join('');
+    cs.querySelectorAll('.chip').forEach(b => b.onclick = () => { const ai = +b.dataset.ai; if (!takenAnimals.has(ai)) g.net.setAnimal(ai); });
 
     // colour swatches — pick any colour not already taken by a connected player
     const taken = new Set(pres.players.filter(x => me && x.slot !== me.slot && x.connected).map(x => x.color));

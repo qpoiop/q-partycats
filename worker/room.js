@@ -65,7 +65,7 @@ export class Room {
       slotIdx = this._freeSlot();
       if (slotIdx === null) { this._send(ws, { t: 'full' }); ws.close(1013, 'room full'); return; }
       const wantAnimal = (opts.animal >= 0 && opts.animal < 6) ? opts.animal : slotIdx % 6;
-      entry = { id: uid(), token: uid(), name: opts.name, color: this._pickColor(opts.color), animal: wantAnimal, ready: false, ws, alive: true, lastPong: now(), dropAt: 0, slot: slotIdx };
+      entry = { id: uid(), token: uid(), name: opts.name, color: this._pickColor(opts.color), animal: this._pickAnimal(wantAnimal), ready: false, ws, alive: true, lastPong: now(), dropAt: 0, slot: slotIdx };
       this.slots.set(slotIdx, entry);
       if (!this.hostId) this.hostId = entry.id;
     }
@@ -90,7 +90,7 @@ export class Room {
       case 'pong': entry.alive = true; break;
       case 'ping': this._send(entry.ws, { t: 'pong' }); break;
       case 'setColor': if (this._colorFree(msg.color, entry)) { entry.color = msg.color; this._broadcastPresence(); } break;
-      case 'setAnimal': { const a = msg.animal | 0; if (a >= 0 && a < 6) { entry.animal = a; this._broadcastPresence(); } break; }
+      case 'setAnimal': { const a = msg.animal | 0; if (a >= 0 && a < 6 && this._animalFree(a, entry)) { entry.animal = a; this._broadcastPresence(); } break; }
       case 'setReady': entry.ready = !!msg.ready; this._broadcastPresence(); break;
       case 'setName': entry.name = String(msg.name || '').slice(0, 12) || entry.name; this._broadcastPresence(); break;
       case 'config': if (entry.id === this.hostId) { this.config = { count: msg.count | 0 || this.config.count, rounds: msg.rounds | 0 || this.config.rounds }; this._broadcastPresence(); } break;
@@ -148,6 +148,8 @@ export class Room {
   _anyId() { for (const e of this.slots.values()) return e.id; return null; }
   _colorFree(c, self) { for (const e of this.slots.values()) if (e !== self && e.color === c) return false; return true; }
   _pickColor(pref) { if (this._colorFree(pref, null)) return pref; for (let c = 0; c < MAX_PLAYERS; c++) if (this._colorFree(c, null)) return c; return pref; }
+  _animalFree(a, self) { for (const e of this.slots.values()) if (e !== self && e.animal === a) return false; return true; }
+  _pickAnimal(pref) { if (this._animalFree(pref, null)) return pref; for (let a = 0; a < 6; a++) if (this._animalFree(a, null)) return a; return pref; }
 
   _presence() {
     const players = [...this.slots.entries()]
