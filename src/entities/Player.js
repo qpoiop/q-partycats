@@ -118,6 +118,8 @@ export class Player {
       this.tumble = tumble;
       if (axis) this.tumbleAxis.copy(axis).normalize();
     }
+    // real hit-reaction clip on a stagger (knockdowns play the flop instead)
+    if (this.knockdown <= 0) this.cat.playAction(Math.random() < 0.5 ? 'Idle_HitReact1' : 'Idle_HitReact2', false, 1.5);
   }
 
   dispose() {

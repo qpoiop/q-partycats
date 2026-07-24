@@ -64,6 +64,7 @@ export class Actions {
     if (p.grabbing) { this.throw(p); return; }
     if (p.punchCd > 0) return;
     p.punchCd = ABIL.punchCd; p.punching = ABIL.punchTime; p._punchDone = false;   // drives the jab pose
+    p.cat.playAction('Attack', false, 1.4);   // real Attack clip on rigged models (no-op on the old cat)
   }
 
   /** Contact frame of the jab — reach test + knockback, fired by Player when the

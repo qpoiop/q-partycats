@@ -40,6 +40,7 @@ export class Cat {
     this.sit = this.clips['Sitting'];   // legacy path
     this.hasLoco = !!(this.walk && this.run && this.idle);   // has a full locomotion set → skip procedural gait
     [this.idle, this.walk, this.run].forEach(a => { if (a) { a.play(); a.setEffectiveWeight(0); } });
+    this._act = null;   // one-shot action clip (Attack / HitReact / Death) overriding loco
     this._bob = 0;
 
   }
@@ -175,6 +176,20 @@ export class Cat {
     const acting = punch + kick + slide + cheer;
 
     this.mixer.update(dt);
+
+    // a one-shot action clip (Attack/HitReact/Death) owns the pose while it runs
+    if (this._act) {
+      const finished = !this._act.hold && this._act.a.time >= this._act.dur - 0.02;
+      if (finished) { this._act.a.stop(); this._act = null; }
+      else {
+        if (this.idle) this.idle.setEffectiveWeight(0);
+        if (this.walk) this.walk.setEffectiveWeight(0);
+        if (this.run) this.run.setEffectiveWeight(0);
+        this._act.a.setEffectiveWeight(1);
+        return;   // clip drives everything → skip loco blend + procedural poses
+      }
+    }
+
     if (this.hasLoco) {
       // real clips: cross-fade Idle → Walk → Gallop by speed, stride tracks velocity
       const runFrom = MOVE.speed * 0.55;
@@ -308,4 +323,15 @@ export class Cat {
     this._e.set(x, y, z);
     bone.quaternion.multiply(this._q.setFromEuler(this._e));
   }
+
+  /** Play a one-shot action clip (Attack/HitReact/Death) over the locomotion.
+      `hold` clamps on the last frame (for a downed/death pose). */
+  playAction(name, hold = false, timeScale = 1) {
+    const a = this.clips[name]; if (!a) return;
+    if (this._act && this._act.a !== a) this._act.a.stop();
+    a.reset(); a.setLoop(THREE.LoopOnce, 1); a.clampWhenFinished = hold;
+    a.timeScale = timeScale; a.setEffectiveWeight(1); a.play();
+    this._act = { a, name, hold, dur: a.getClip().duration / timeScale };
+  }
+  clearAction() { if (this._act) { this._act.a.fadeOut(0.12); this._act = null; } }
 }
