@@ -324,9 +324,35 @@
     .cfg .go{ margin-left:0; width:100%; justify-content:center; }
   }
 
+  /* mobile lobby: compact pickers, scrollable character strip, tighter slots */
+  @media (pointer:coarse){
+    #lobby .panel{ padding:16px 14px 16px; }
+    #lobby .lb-sub{ font-size:11px; }
+    .picks{ gap:14px 20px; margin-top:12px; }
+    .pickrow>.lab{ font-size:10px; }
+    .chars{ flex-wrap:nowrap; overflow-x:auto; overflow-y:hidden; max-width:62vw; padding-bottom:4px; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
+    .chars::-webkit-scrollbar{ display:none; }
+    .chip{ width:50px; height:50px; flex:0 0 auto; }
+    .chip .nm{ font-size:8px; }
+    .colors{ height:50px; gap:9px; }
+    .sw{ width:32px; height:32px; }
+    .slots{ margin-top:12px; gap:8px; }
+  }
+  @media (pointer:coarse) and (max-width:560px){
+    .picks{ flex-direction:column; gap:10px; }
+    .chars{ max-width:88vw; }
+    .slots{ grid-template-columns:repeat(4,1fr); }
+    .slot{ padding:8px 5px 9px; }
+  }
+
   @media (orientation:landscape) and (max-height:560px){
     /* short landscape (phones): compact status cards so all 4 stay on one row
        instead of wrapping onto a second row and eating the short height */
+    .picks{ gap:10px 16px; margin-top:8px; }
+    .chip{ width:42px; height:42px; }
+    .colors{ height:42px; }
+    .sw{ width:28px; height:28px; }
+    .slots{ margin-top:8px; }
     #hud .top{ gap:5px; flex-wrap:nowrap; max-width:99vw; }
     .pcard{ padding:3px 7px 3px 3px; border-radius:10px; gap:5px; }
     .pcard .av{ width:16px; height:16px; }

@@ -117,9 +117,11 @@ export class Cat {
         sh.fragmentShader = 'uniform vec3 uTeam;\n' + sh.fragmentShader.replace(
           '#include <color_fragment>',
           `#include <color_fragment>
+           // strong team tint across the whole body (light animals need it), but
+           // keep the model's own shading via luminance so it isn't a flat blob.
            float _lum = dot(diffuseColor.rgb, vec3(0.299,0.587,0.114));
-           float _m = smoothstep(0.86, 0.66, _lum) * (1.0 - smoothstep(0.30, 0.12, _lum));
-           diffuseColor.rgb = mix(diffuseColor.rgb, uTeam * (0.5 + 0.7*_lum), _m);`,
+           vec3 _tint = uTeam * (0.35 + 0.85 * _lum);
+           diffuseColor.rgb = mix(diffuseColor.rgb, _tint, 0.7);`,
         );
       };
       mat.customProgramCacheKey = () => 'team' + hex;

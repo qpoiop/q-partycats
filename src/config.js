@@ -69,7 +69,7 @@ export const BODY = {
   capHalfHeight: 0.5,
   capRadius: 0.66,
   density: 1.1,
-  visualHeight: 2.3,   // Fox is long → normalise its HEIGHT smaller so its length fits the arena
+  visualHeight: 1.85,  // animals are long → keep them small enough for the arena
   linearDamping: 0.2,
 };
 BODY.footOffset = BODY.capHalfHeight + BODY.capRadius; // center → feet
