@@ -168,7 +168,7 @@ export class Cat {
   updateAnimation(dt, s) {
     const speed = s.speed || 0, onGround = !!s.onGround;
     const flail = s.flail || 0, rear = s.rear || 0;
-    const punch = s.punch || 0, kick = s.kick || 0, slide = s.slide || 0, cheer = s.cheer || 0, pull = s.pull || 0, limp = s.limp || 0;
+    const punch = s.punch || 0, kick = s.kick || 0, slide = s.slide || 0, cheer = s.cheer || 0, pull = s.pull || 0, limp = s.limp || 0, clash = s.clash || 0;
     const acting = punch + kick + slide + cheer;
 
     this.mixer.update(dt);
@@ -190,6 +190,9 @@ export class Cat {
 
     // rear up on hind legs (grab / struggle) — front paws lift like hands
     if (rear > 0.02) for (const leg of fl) this._rot(leg, -1.25 * rear + Math.sin(t * 12) * 0.25 * rear, 0, 0);
+    // CLASH — reared into another cat: front paws shove FORWARD against them (a
+    // straining chest-to-chest push, with a little grinding jitter)
+    if (clash > 0.12 && rear < 0.5) for (const leg of fl) this._rot(leg, -0.6 * clash + Math.sin(t * 20) * 0.12 * clash, 0, 0);
     // grabber tug — yank the raised paws in on the pull beat (drags the victim)
     if (pull > 0.02) for (const leg of fl) this._rot(leg, -pull * GRAB.tugArm, 0, 0);
 

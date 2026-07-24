@@ -68,6 +68,7 @@ export class Player {
     this._jumpT = 0;  // jump anticipation (crouch) timer
     this._koPose = 0; this._koSign = 1;   // knockdown flop ramp (smooth fall-over / get-up)
     this._airSpin = 0;                    // rotation while flung through the air
+    this._clash = 0;                      // chest-to-chest shove intensity (rear-up push)
     this._mashPulse = 0;                  // struggle-mash flail spike (decays)
     this.knockdown = 0;   // >0 = downed: can't act, must get up
     this.teeter = 0; this._teetered = false;   // hanging/flailing at the ledge
@@ -171,6 +172,7 @@ export class Player {
     if (this.grabCd > 0) this.grabCd -= dt;
     if (this.knockdown > 0) this.knockdown -= dt;
     if (this._mashPulse > 0) this._mashPulse = Math.max(0, this._mashPulse - dt * 4.5);
+    if (this._clash > 0) this._clash = Math.max(0, this._clash - dt * 3.5);
     // jump anticipation: hold a crouch, then launch (springy, not instant)
     if (this._jumpT > 0) {
       this._jumpT -= dt;
@@ -277,9 +279,11 @@ export class Player {
       const dx = op.x - me.x, dz = op.z - me.z, d = Math.hypot(dx, dz);
       if (d < reach && d > 1e-3) {
         const dot = (dx * dx0 + dz * dz0) / d;   // am I pushing toward them?
-        if (dot > 0.5) {
+        if (dot > 0.35) {
           const push = MOVE.shove * this.moveMag * dot * o.mass() * dt;
           o.body.applyImpulse(V((dx / d) * push, 0, (dz / d) * push), true);
+          this._clash = 1;                       // chest-to-chest scrum → rear-up push pose
+          o._clash = Math.max(o._clash, 0.7);    // the shoved cat braces too
         }
       }
     }
@@ -463,9 +467,12 @@ export class Player {
         ox += 0.42 * blocked;   // strain-lean into a shove
       }
       if (this.punching > 0) ox += 0.5 * Math.sin(Math.min(1, this.punching / ABIL.punchTime) * Math.PI);   // punch lunge
+      // CLASH: pressing chest-to-chest into another cat → rear up on the hind legs
+      // and shove (front paws push in Cat). This is the physical scrum contact.
+      if (this._clash > 0.12) ox += -0.9 * this._clash;
       // GAIT: bob + weight-shift with the stride so it walks with weight (not gliding)
       const gsp = Math.hypot(v.x, v.z);
-      if (this.onGround && gsp > 0.5) {
+      if (this.onGround && gsp > 0.5 && this._clash < 0.3) {
         this._gait += dt * BODY.gaitFreq * gsp;
         const sf = Math.min(1, gsp / MOVE.speed);
         this.cat.model.position.y = this.cat._baseY + Math.abs(Math.sin(this._gait)) * BODY.gaitBounce * sf;
@@ -494,6 +501,7 @@ export class Player {
       turn:  this._turnRate,
       limp:  this._koPose,
       stride: this._gait,
+      clash: this._clash,
     });
     // fallback stand-in has no clips → give it a little walk bob for life
     if (this.cat.fallback && this.tumble <= 0) {
