@@ -419,11 +419,12 @@ export class Player {
       this.tilt.rotation.set(0, 0, 0);
       this.tilt.rotateOnAxis(this._axisH, Math.min(0.9, this.tumble * 0.9));
     } else if (this.sliding > 0) {
-      // SLIDE — belly-low tackle, nose down, held for the slide window
+      // SLIDE — flat prone dive: body nearly horizontal, limbs stretched (in Cat),
+      // stretched-out along its length (superman slide through the air)
       const s = Math.min(1, this.sliding / ABIL.slideTime);
       this.tilt.rotation.set(0, 0, 0);
-      this.tilt.rotation.x = 0.75 * s;
-      sy = 1 - this.squash; sx = 1 + this.squash * 0.5;
+      this.tilt.rotation.x = 0.22 * s;              // just off flat, not a nose-dive
+      sy = 1 - 0.12 * s; sx = 1 + 0.14 * s;         // stretch out lengthwise
     } else if (this.dashAir && this.dashTimer > 0) {
       // FLYING KICK — clean lunge: lean back, legs thrust forward (Cat kick pose).
       // Override the velocity lean so it reads as a kick, not a tumble/roll.

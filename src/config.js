@@ -139,8 +139,9 @@ export const ABIL = {
   punchTime: 0.34,     // pose duration — long enough to read the swing
   punchStrikeFrac: 0.4,// contact lands at this fraction into the swing (windup → hit), not instantly
 
-  // slide (슬라이딩) = jump+grab → low tackle
-  slideVel: 12,
+  // slide (슬라이딩) = jump+grab → a flat flying dive (prone, limbs stretched)
+  slideVel: 13,
+  slideLaunchVy: 2.2,   // small upward pop → arcs through the air, not a slam
   slideTime: 0.45,
   slideStrike: 7.5,
   slideLift: 3.0,

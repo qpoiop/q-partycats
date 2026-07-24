@@ -209,9 +209,11 @@ export class Cat {
       for (const leg of bl) this._rot(leg, 0.8 * kick, 0, 0);
     }
 
-    // SLIDE (슬라이딩) — low tackle, front paws reach forward flat
-    if (slide > 0.02 && fl.length) {
-      for (const leg of fl) this._rot(leg, -1.0 * slide, 0, 0);
+    // SLIDE (슬라이딩) — superman dive: front paws stretch forward, hind legs
+    // stretch back, all four extended along the flat prone body
+    if (slide > 0.02) {
+      for (const leg of fl) this._rot(leg, -1.5 * slide, 0, 0);
+      for (const leg of bl) this._rot(leg, 1.1 * slide, 0, 0);
     }
 
     // AIRBORNE (jump) — tuck the legs so a leap reads as a leap, not a slide-up

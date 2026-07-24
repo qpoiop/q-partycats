@@ -92,8 +92,10 @@ export class Actions {
     let dir;
     if (p.moveMag > 0.12) { dir = new THREE.Vector3(p.moveDir.x, 0, p.moveDir.y).normalize(); p.facing = Math.atan2(dir.x, dir.z); p.faceTarget = p.facing; }
     else dir = p.faceVec();
-    // slam down onto the ground so it reads as a low slide, not a hop
-    p.body.setLinvel(V(dir.x * ABIL.slideVel, -9, dir.z * ABIL.slideVel), true);
+    // a flat, flying dive: shoot forward with a small upward pop so it arcs
+    // through the air (superman slide), not a straight-down slam
+    p.body.setLinvel(V(dir.x * ABIL.slideVel, ABIL.slideLaunchVy, dir.z * ABIL.slideVel), true);
+    p.onGround = false;
     p.dashTimer = ABIL.slideTime; p.dashAir = false; p.invuln = 0.3; p.sliding = ABIL.slideTime;
     p.knockTimer = Math.max(p.knockTimer, ABIL.slideTime);
     this.game.fx.streak(p, dir); this.game.fx.dust(p.pos(), p.hex, 10, 0.7);
