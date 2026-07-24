@@ -188,8 +188,16 @@ export class Cat {
     // the instant it starts moving / acting so it never blocks responsiveness.
     const resting = this.hasLoco && onGround && speed < ANIM.idleSpeed && !s.grabbed
       && acting < 0.05 && flail < 0.05 && rear < 0.5 && limp < 0.05;
-    if (this._act && this._act.fidget && !resting) { this._act.a.stop(); this._act = null; }
-    else if (!this._act && resting && this.fidgets.length) {
+    // transient idle-ish clips (fidget / landing recovery) yield to real intent.
+    // A fidget cancels the moment it isn't resting; a landing recovery tolerates
+    // the residual momentum of touchdown and only cancels on an actual run/action.
+    if (this._act && this._act.fidget) {
+      const cancel = this._act.landing
+        ? (!onGround || speed > MOVE.speed * 0.5 || acting > 0.05 || rear > 0.5 || s.grabbed || flail > 0.05)
+        : !resting;
+      if (cancel) { this._act.a.stop(); this._act = null; }
+    }
+    if (!this._act && resting && this.fidgets.length) {
       this._idleT += dt;
       if (this._idleT >= this._idleWait) {
         this._idleT = 0; this._idleWait = 5 + Math.random() * 6;

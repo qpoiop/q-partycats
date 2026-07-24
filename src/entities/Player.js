@@ -156,6 +156,15 @@ export class Player {
     if (this.onGround && !this._wasGround && this._prevVy < -4 && this.knockdown <= 0) {
       this.squash = Math.min(0.45, -this._prevVy * 0.035);
     }
+    // landing recovery clip (Jump_ToIdle) — the crouch-and-stand pair to the
+    // Gallop_Jump takeoff. Only a CONTROLLED touchdown (not a knockback flight),
+    // and marked transient so it's interrupted the instant the cat runs off →
+    // land-into-stop shows the recovery, land-into-run goes straight to loco.
+    if (this.onGround && !this._wasGround && this._prevVy < -3 && this.knockdown <= 0
+        && this.knockTimer <= 0 && this.cat.hasLoco && this.cat.clips['Jump_ToIdle']) {
+      this.cat.playAction('Jump_ToIdle', false, 1.3);
+      if (this.cat._act) { this.cat._act.fidget = true; this.cat._act.landing = true; this.cat._idleT = 0; }
+    }
     this._wasGround = this.onGround;
     this._prevVy = this.vel().y;
 
