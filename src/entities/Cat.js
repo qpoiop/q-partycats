@@ -277,13 +277,15 @@ export class Cat {
       this._rot(this.head, bob, this._hy, 0);
     }
 
-    // tail sway (secondary motion) — lazy idle swish that swings out on turns
+    // tail (secondary motion) — held UP with an S-curve: the base sways and the
+    // tip counter-rotates + curls, so 2 bones read as an organic tail, not a wag.
     if (this.tail.length && flail < 0.05 && limp < 0.05) {
       const move = (onGround && speed > ANIM.idleSpeed) ? Math.sin(t * (5 + speed)) * ANIM.tailBob * Math.min(1, speed / ANIM.refSpeed) : 0;
-      const tgt = THREE.MathUtils.clamp((s.turn || 0) * ANIM.tailTurnGain, -0.2, 0.2) + Math.sin(t * 1.3) * ANIM.tailIdle + move;
+      const tgt = THREE.MathUtils.clamp((s.turn || 0) * ANIM.tailTurnGain, -0.25, 0.25) + Math.sin(t * 1.3) * ANIM.tailIdle + move;
       this._tyV += ((tgt - this._ty) * ANIM.tailStiff - this._tyV * ANIM.tailDamp) * dt;
       this._ty += this._tyV * dt;
-      this._rot(this.tail[0], 0, this._ty, 0);
+      this._rot(this.tail[0], -ANIM.tailUp, this._ty, 0);                       // base: held up + sway
+      if (this.tail[1]) this._rot(this.tail[1], -ANIM.tailCurl, -this._ty * 0.7, 0);   // tip: curl + counter-sway (S)
     }
   }
 

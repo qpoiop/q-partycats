@@ -232,9 +232,11 @@ export const ANIM = {
   // tail secondary motion — only 2 tail bones, so keep it a SUBTLE drift, not a
   // rigid single-bone wag (real cats don't yaw-swing the whole tail base)
   tailStiff: 30, tailDamp: 7,
-  tailTurnGain: 0.07,  // barely leans out on turns
-  tailIdle: 0.05,      // faint resting drift
-  tailBob: 0.05,       // faint extra drift while moving
+  tailTurnGain: 0.1,   // leans out on turns
+  tailIdle: 0.08,      // resting drift
+  tailBob: 0.06,       // extra drift while moving
+  tailUp: 0.4,         // resting upward hold (cats carry the tail up)
+  tailCurl: 0.5,       // tip curls + counter-yaws vs the base → an S-curve, not a rigid wag
   // phase 3: knocked-out limp — loose limbs settle heavily, head/tail droop
   limpLegSplay: 0.5,   // how far the loose legs sprawl
   limpHeadLoll: 0.5,   // head drops (gravity)
