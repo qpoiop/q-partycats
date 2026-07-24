@@ -83,3 +83,4 @@
 - [x] 사이클19: 액티브랙돌 Phase2(머리 2차모션 스프링) — 회전 lag + stride bob. 안정.
 - [x] 사이클20: 액티브랙돌 Phase2 꼬리 스윙 완료(BONEMAP.tail=Bone002 체인). 머리+꼬리 2차모션.
 - [x] 사이클21: 액티브랙돌 Phase3(넉다운 림프 랙돌 blend). flail→loose sprawl+droop.
+- [x] 사이클22: 진단(움직임 부자연=미끄러짐/무게없음, 다리클립 약함) → gait 바운스+무게이동 추가(BODY.gait*). 걸음 리듬/무게감. 검증 bounce 0.06/roll. 메모: 모델 다리 stubby+클립1개라 발걸음 articulation은 한계 → 진짜 자연스러움은 애니 많은 모델 필요.

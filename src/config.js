@@ -66,6 +66,12 @@ BODY.restY = BODY.footOffset;
 BODY.wobbleStiff = 95;    // spring stiffness (higher = snappier)
 BODY.wobbleDamp = 8.5;    // damping (lower = more jiggle/overshoot; ζ≈0.44)
 BODY.wobbleHitKick = 6.5; // angular velocity injected into the lean on a hit
+/* Gait: the weak walk clip made the cat GLIDE. A vertical bob + lateral
+   weight-shift roll, driven by a speed-scaled stride phase, sells footfalls and
+   weight so it reads as walking, not sliding. */
+BODY.gaitBounce = 0.11;   // body rise/fall per step
+BODY.gaitRoll = 0.09;     // side-to-side weight shift (roll)
+BODY.gaitFreq = 3.6;      // stride cadence per unit speed
 
 // ---------- physics world ----------
 export const PHYSICS = {

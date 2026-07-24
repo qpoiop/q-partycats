@@ -64,6 +64,7 @@ export class Player {
     this._leanX = 0; this._leanZ = 0;   // body-lean angular spring position…
     this._leanVX = 0; this._leanVZ = 0; // …and velocity (underdamped → wobble/overshoot)
     this._wasGround = true; this._prevVy = 0;   // landing-squash detection
+    this._gait = 0;   // stride phase for the gait bob/weight-shift
     this._koPose = 0; this._koSign = 1;   // knockdown flop ramp (smooth fall-over / get-up)
     this._mashPulse = 0;                  // struggle-mash flail spike (decays)
     this.knockdown = 0;   // >0 = downed: can't act, must get up
@@ -437,6 +438,14 @@ export class Player {
         ox += 0.42 * blocked;   // strain-lean into a shove
       }
       if (this.punching > 0) ox += 0.35 * Math.sin(Math.min(1, this.punching / ABIL.punchTime) * Math.PI);   // jab lunge
+      // GAIT: bob + weight-shift with the stride so it walks with weight (not gliding)
+      const gsp = Math.hypot(v.x, v.z);
+      if (this.onGround && gsp > 0.5) {
+        this._gait += dt * BODY.gaitFreq * gsp;
+        const sf = Math.min(1, gsp / MOVE.speed);
+        this.cat.model.position.y = Math.abs(Math.sin(this._gait)) * BODY.gaitBounce * sf;
+        oz += Math.sin(this._gait * 0.5) * BODY.gaitRoll * sf;   // rock side to side
+      }
       this.tilt.rotation.set(ox, 0, oz);
       sy = 1 - this.squash; sx = 1 + this.squash * 0.5;
     }
