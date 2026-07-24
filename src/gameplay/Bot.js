@@ -62,11 +62,14 @@ export class Bot {
     }
     const nearEdge = myD > R - 2.2;
 
-    // carrying a victim → drag them to the rim, then hurl them off (a reliable
-    // ring-out: throwing from the centre just drops them back inside)
+    // carrying a victim → drag them all the way to the LIP, then hurl them off.
+    // The victim is held ~holdDist in front (outward), so dragging until the bot
+    // itself is ~1.8u from the rim puts the held cat already over the edge → the
+    // throw reliably rings them out (throws thrown from the centre just drop back
+    // inside — the old R-3.2 release was too early to clear the rim).
     if (p.grabbing && p.grabbing.alive) {
       const outD = Math.max(0.5, myD), ox = me.x / outD, oz = me.z / outD;
-      if (myD > R - 3.2 || p.grip < 0.28) {
+      if (myD > R - 1.8 || p.grip < 0.28) {
         p.facing = Math.atan2(ox, oz); p.faceTarget = p.facing; p.moveMag = 0;
         A.throw(p); return;
       }
