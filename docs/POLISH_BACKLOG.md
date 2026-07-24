@@ -118,6 +118,12 @@
 - [x] 클래시 반응 — _grindShove 접촉+미는 순간 _clash=1(밀린쪽도 0.7). pose에서 두발로 rear-up(ox -=0.9*clash) + Cat 앞발 forward 밀기(grinding jitter). 붙으면 서로 두발로 서서 앞발로 밀며 착붙(gap 1.32 유지). 세워서 수평겹침/잘림도 감소. 검증 스샷(두 고양이 몸싸움).
 - [x] 사이클35: 컬러그레이드+비네트 / 충돌 클래시 반응(두발로 서서 앞발 밀기, 착붙).
 
+## 유저 4건(맵/오버레이/박치기/파티클) — 유저 지적
+- [x] 맵 더 작게 — ARENA.radius 11.5→10.0(단일 스케일 소스, 스폰/카메라/데코 파생).
+- [x] 주먹→박치기(박치기) — Attack 클립(앞발/물기, 틀린 모션) 제거하고 절차적 머리 박기: 와인드업에 머리 뒤로 젖힘→앞아래로 스냅(박치기), 앞다리 브레이스, 몸 런지(기존 Player lean). 검증: head pitch -1.02→+0.57, Attack 클립 미재생. 히트로직(punchStrike) 유지.
+- [x] 파티클 축소(4인 전투 가독성) — dust point 0.42→0.26+밝기 1.6→1.2, 쇼크링 성장 11→6.5×, 대시 streak 0.34×2.0→0.22×1.5+opacity 0.5→0.34.
+- [x] 로비 칩 검은 오버레이 — 하드 블랙 네임바(rgba(0,0,0,.5))가 검은 오버레이로 보임 → 하단 그라디언트+칩 bg 상향. 초상화 RT 엣지 언프리멀티플라이(어두운 프린지 제거).
+
 ## ★ 새 모델(애니 있는 Quaternius 동물팩) 통합 — 유저 제공
 - [x] STAGE1: Fox.gltf(자체포함) 통합 — 실제 클립 Idle/Walk/Gallop 스피드 블렌드. BONEMAP.cat→fox 리그(FrontLowerLeg/BackLowerLeg/Head/Tail1). hasLoco 플래그로 절차적 gait/walkstep/head·tail 2차모션 스킵(클립이 처리). visualHeight 2.3(여우 길어서), 접지 feetY 0, 방향 +Z 정면 맞음. 로드/애니/틴트/접지 검증, 콘솔0.
 - [x] STAGE2: 액션에 실제 클립 — 주먹=Attack, 맞기=Idle_HitReact, 넉다운=Death, 점프=Gallop_Jump 완료. (점프: jumpLaunch에서 Gallop_Jump ×1.1 재생 → 클립 leap 아크가 물리 행타임 2·jumpVel/g≈0.84s vs 클립0.93s에 싱크. 검증: 공중 전구간 클립활성, 착지시 자동 clear→loco, 착지스쿼시 유지. 옛모델 no-op.)
