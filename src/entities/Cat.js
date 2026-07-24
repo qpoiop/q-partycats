@@ -23,6 +23,7 @@ export class Cat {
     this.model = holder;
 
     this._q = new THREE.Quaternion(); this._e = new THREE.Euler();
+    this._hy = 0; this._hyV = 0;   // head-yaw secondary-motion spring (lag)
     this._mapBones(inner);
     this._normalise(holder);
 
@@ -196,6 +197,16 @@ export class Cat {
         this._rot(set[i], Math.sin(t * 17 + ph) * 1.2 * flail, Math.sin(t * 11 + ph) * 0.5 * flail, Math.cos(t * 14 + ph) * 0.9 * flail);
       }
       if (this.head) this._rot(this.head, Math.sin(t * 10) * 0.5 * flail, Math.sin(t * 8) * 0.5 * flail, 0);
+    }
+
+    // SECONDARY MOTION (active-ragdoll phase 2): during ordinary locomotion the
+    // head lags the body's turn (spring) and bobs with the stride → alive, not stiff.
+    if (this.head && acting < 0.05 && flail < 0.05 && rear < 0.5) {
+      const tgtYaw = -THREE.MathUtils.clamp((s.turn || 0) * ANIM.headYawGain, -0.5, 0.5);
+      const acc = (tgtYaw - this._hy) * ANIM.headLagStiff - this._hyV * ANIM.headLagDamp;
+      this._hyV += acc * dt; this._hy += this._hyV * dt;
+      const bob = (onGround && speed > ANIM.idleSpeed) ? Math.sin(t * (8 + speed)) * ANIM.headBob * Math.min(1, speed / ANIM.refSpeed) : 0;
+      this._rot(this.head, bob, this._hy, 0);
     }
   }
 

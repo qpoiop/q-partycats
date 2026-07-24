@@ -443,6 +443,11 @@ export class Player {
     this.tilt.scale.set(sx, sy, sx);
 
     const sp = Math.hypot(v.x, v.z);
+    // body turn rate (rad/s) → drives head secondary motion (lag)
+    let df2 = this.facing - (this._prevFacing ?? this.facing);
+    while (df2 > Math.PI) df2 -= 6.283; while (df2 < -Math.PI) df2 += 6.283;
+    this._turnRate = df2 / Math.max(dt, 1e-3);
+    this._prevFacing = this.facing;
     const rear = (this.grabbedBy || this.grabbing) ? 1 : 0;   // stand on hind legs to grab/struggle
     const flail = this.grabbedBy ? Math.min(1.4, 0.4 + this.struggle * 0.6 + this._mashPulse * 0.6) : this.teeter > 0 ? 1 : this.knockdown > 0 ? 0.85 : this.tumble > 0 ? this.tumble : 0;
     this.cat.updateAnimation(dt, {
@@ -451,6 +456,7 @@ export class Player {
       kick:  (this.dashAir && this.dashTimer > 0) ? Math.min(1, this.dashTimer / ABIL.dashTime) : 0,
       slide: this.sliding > 0 ? Math.min(1, this.sliding / ABIL.slideTime) : 0,
       pull:  this.grabbing ? (Math.sin(performance.now() * 0.001 * GRAB.tugFreq) * 0.5 + 0.5) : 0,
+      turn:  this._turnRate,
     });
     // fallback stand-in has no clips → give it a little walk bob for life
     if (this.cat.fallback && this.tumble <= 0) {

@@ -211,6 +211,11 @@ export const ANIM = {
   timeScaleMax: 2.4,
   idleSpeed: 0.35,     // below this → idle (sit) blends in
   walkBlendSpeed: 1.4, // full walk weight reached here
+  // active-ragdoll phase 2: head secondary motion (lags turns + bobs with stride)
+  headLagStiff: 60,    // head-yaw spring stiffness
+  headLagDamp: 8,      // head-yaw spring damping (underdamped → trails then catches)
+  headYawGain: 0.16,   // how far the head lags per rad/s of body turn
+  headBob: 0.1,        // stride bob amplitude (pitch)
 };
 
 /* ---------- CAMERA & RENDER ----------
